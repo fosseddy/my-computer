@@ -7,26 +7,23 @@ int main(int argc, char **argv) {
     // @TODO: proper error handle
     assert(argc > 1);
 
-    char *file_name = argv[1];
-    printf("%s\n", file_name);
-
     // @TODO: validate file
+    char *file_name = argv[1];
     FILE *f = fopen(file_name, "r");
 
     char *line = NULL;
     size_t len = 0;
-
     while (getline(&line, &len, f) != -1) {
         // trim left
         while (isspace(*line)) {
             line++;
         }
 
-        // string includes "//"
+        // line includes comment
         if (strstr(line, "//") != NULL) {
-            // string starts with "//"
+            // whole line is comment
             if (strncmp(line, "//", 2) == 0) continue;
-            // split by "//"
+            // line has inline comment
             strtok(line, "//");
         }
 
