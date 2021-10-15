@@ -11,6 +11,9 @@ int main(int argc, char **argv) {
     char *file_name = argv[1];
     FILE *f = fopen(file_name, "r");
 
+    // @TODO: proper error handle
+    assert(f != NULL);
+
     char *line = NULL;
     size_t len = 0;
     while (getline(&line, &len, f) != -1) {
