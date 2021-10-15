@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
             inst.type = INST_A;
 
             assert(strlen(line) - 1 < MAX_LABEL_SIZE);
+            // remove '@' from inst: @R1 -> R1
             for (int i = 1; i <= strlen(line); ++i) {
                 inst.label[i - 1] = line[i];
             }
