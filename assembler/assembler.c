@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
     assert(f != NULL);
 
     char *line = NULL;
-    size_t len = 0;
-    while (getline(&line, &len, f) != -1) {
+    size_t line_size = 0;
+    while (getline(&line, &line_size, f) != -1) {
         trim_left(line);
 
         // line includes comment
