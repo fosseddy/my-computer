@@ -4,6 +4,23 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAX_INST_SIZE 4
+#define MAX_LABEL_SIZE 101
+
+typedef enum {
+    INST_A = 0,
+    INST_C,
+    INST_L
+} Inst_type;
+
+typedef struct {
+    Inst_type type;
+    char dest[MAX_INST_SIZE];
+    char comp[MAX_INST_SIZE];
+    char jump[MAX_INST_SIZE];
+    char label[MAX_LABEL_SIZE];
+} Inst;
+
 void trim_left(char *s);
 void trim_right(char *s);
 
@@ -28,14 +45,82 @@ int main(int argc, char **argv) {
             // whole line is comment
             if (strncmp(line, "//", 2) == 0) continue;
             // line has inline comment
-            strtok(line, "//");
+            char line_copy[strlen(line)];
+            strcpy(line_copy, line);
+            char *line_with_no_comment = strtok(line_copy, "//");
+            strcpy(line, line_with_no_comment);
         }
 
         trim_right(line);
 
         if (strlen(line) == 0) continue;
 
-        printf("%s\n", line);
+        Inst inst = {
+            .type = -1,
+            .label = "",
+            .dest = "",
+            .comp = "",
+            .jump = ""
+        };
+
+        printf("%15s | ", line);
+
+        // instruction A starts with @
+        if (strncmp(line, "@", 1) == 0) {
+            inst.type = INST_A;
+
+            assert(strlen(line) - 1 < MAX_LABEL_SIZE);
+            for (int i = 1; i <= strlen(line); ++i) {
+                inst.label[i - 1] = line[i];
+            }
+        // instruction L starts with '(' and ends with ')'
+        } else if (strncmp(line, "(", 1) == 0) {
+            inst.type = INST_L;
+
+            assert(strlen(line) - 2 < MAX_LABEL_SIZE);
+            // remove '(' and ')' from label: (LABEL_NAME) -> LABEL_NAME
+            for (int i = 1; i < strlen(line) - 1; ++i) {
+                inst.label[i - 1] = line[i];
+            }
+            inst.label[strlen(line) - 2] = '\0';
+        } else {
+            inst.type = INST_C;
+
+            // if instruction C includes '=', then extract dest
+            if (strchr(line, '=') != NULL) {
+                char line_copy[strlen(line)];
+                strcpy(line_copy, line);
+
+                char *dest = strtok(line_copy, "=");
+
+                assert(strlen(dest) < MAX_INST_SIZE);
+                strcpy(inst.dest, dest);
+
+                char *next_tok = strtok(NULL, "=");
+                strcpy(line, next_tok);
+            }
+
+            // if instruction C includes ';', then extract jump
+            if (strchr(line, ';') != NULL) {
+                char line_copy[strlen(line)];
+                strcpy(line_copy, line);
+
+                char *comp = strtok(line_copy, ";");
+                strcpy(line, comp);
+
+                char *jump = strtok(NULL, ";");
+
+                assert(strlen(jump) < MAX_INST_SIZE);
+                strcpy(inst.jump, jump);
+            }
+
+            assert(strlen(line) < MAX_INST_SIZE);
+            strcpy(inst.comp, line);
+        }
+
+        assert(inst.type != -1);
+        printf("type: %d label: %15s dest: %3s comp: %3s jmp: %3s\n",
+                inst.type, inst.label, inst.dest, inst.comp, inst.jump);
     }
 
     free(line);
