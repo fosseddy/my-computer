@@ -1,7 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+
+void trim_left(char *s);
+void trim_right(char *s);
 
 int main(int argc, char **argv) {
     // @TODO: proper error handle
@@ -17,10 +21,7 @@ int main(int argc, char **argv) {
     char *line = NULL;
     size_t len = 0;
     while (getline(&line, &len, f) != -1) {
-        // trim left
-        while (isspace(*line)) {
-            line++;
-        }
+        trim_left(line);
 
         // line includes comment
         if (strstr(line, "//") != NULL) {
@@ -30,12 +31,7 @@ int main(int argc, char **argv) {
             strtok(line, "//");
         }
 
-        // trim right
-        char *end = line + strlen(line) - 1;
-        while (isspace(*end)) {
-            end--;
-        }
-        end[1] = '\0';
+        trim_right(line);
 
         if (strlen(line) == 0) continue;
 
@@ -46,4 +42,34 @@ int main(int argc, char **argv) {
     fclose(f);
 
     return 0;
+}
+
+void trim_left(char *s) {
+    int pad = 0;
+    int len = strlen(s);
+
+    for (int i = 0; i < len; ++i) {
+        if (isspace(s[i])) {
+            pad++;
+        } else {
+            break;
+        }
+    }
+
+    if (pad > 0) {
+        for (int i = pad; i <= len; ++i) {
+            s[i - pad] = s[i];
+        }
+    }
+}
+
+void trim_right(char *s) {
+    int len = strlen(s);
+
+    for (int i = len - 1; i >= 0; --i) {
+        if (!isspace(s[i])) {
+            s[i + 1] = '\0';
+            break;
+        }
+    }
 }
