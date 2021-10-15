@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
         printf("%s\n", line);
     }
 
+    free(line);
     fclose(f);
 
     return 0;
