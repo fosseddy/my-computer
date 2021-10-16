@@ -7,6 +7,16 @@
 #define MAX_INST_SIZE 4
 #define MAX_LABEL_SIZE 101
 
+typedef struct {
+    char key[MAX_LABEL_SIZE];
+    int value;
+} Cell;
+
+typedef struct {
+    unsigned int size;
+    Cell **cells;
+} Table;
+
 typedef enum {
     INST_A = 0,
     INST_C,
@@ -23,6 +33,11 @@ typedef struct {
 
 void trim_left(char *s);
 void trim_right(char *s);
+Table table_new();
+void table_delete(Table *t);
+void table_insert(Table *t, const char *k, int v);
+int table_contains(Table *t, const char *k);
+int table_get(Table *t, const char *k);
 
 int main(int argc, char **argv) {
     // @TODO: proper error handle
@@ -34,6 +49,34 @@ int main(int argc, char **argv) {
 
     // @TODO: proper error handle
     assert(f != NULL);
+
+    Table sym_table = table_new();
+
+    table_insert(&sym_table, "SP", 0);
+    table_insert(&sym_table, "LCL", 1);
+    table_insert(&sym_table, "ARG", 2);
+    table_insert(&sym_table, "THIS", 3);
+    table_insert(&sym_table, "THAT", 4);
+
+    table_insert(&sym_table, "SCREEN", 16384);
+    table_insert(&sym_table, "KBD", 24576);
+
+    table_insert(&sym_table, "R0", 0);
+    table_insert(&sym_table, "R1", 1);
+    table_insert(&sym_table, "R2", 2);
+    table_insert(&sym_table, "R3", 3);
+    table_insert(&sym_table, "R4", 4);
+    table_insert(&sym_table, "R5", 5);
+    table_insert(&sym_table, "R6", 6);
+    table_insert(&sym_table, "R7", 7);
+    table_insert(&sym_table, "R8", 8);
+    table_insert(&sym_table, "R9", 9);
+    table_insert(&sym_table, "R10", 10);
+    table_insert(&sym_table, "R11", 11);
+    table_insert(&sym_table, "R12", 12);
+    table_insert(&sym_table, "R13", 13);
+    table_insert(&sym_table, "R14", 14);
+    table_insert(&sym_table, "R15", 15);
 
     char *line = NULL;
     size_t line_size = 0;
@@ -125,9 +168,57 @@ int main(int argc, char **argv) {
     }
 
     free(line);
+    table_delete(&sym_table);
     fclose(f);
 
     return 0;
+}
+
+Table table_new() {
+    Table t = { .size = 0, .cells = NULL };
+    return t;
+}
+
+void table_delete(Table *t) {
+    for (int i = 0; i < t->size; ++i) {
+        free(t->cells[i]);
+    }
+
+    free(t->cells);
+}
+
+void table_insert(Table *t, const char *k, int v) {
+    t->size++;
+
+    t->cells = realloc(t->cells, t->size * sizeof(Cell));
+    assert(t->cells != NULL);
+
+    Cell *c = malloc(sizeof(Cell));
+    assert(c != NULL);
+
+    strcpy(c->key, k);
+    c->value = v;
+    t->cells[t->size - 1] = c;
+}
+
+int table_contains(Table *t, const char *k) {
+    for (int i = 0; i < t->size; ++i) {
+        if (strcmp(t->cells[i]->key, k) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int table_get(Table *t, const char *k) {
+    for (int i = 0; i < t->size; ++i) {
+        if (strcmp(t->cells[i]->key, k) == 0) {
+            return t->cells[i]->value;
+        }
+    }
+
+    return -1;
 }
 
 void trim_left(char *s) {
