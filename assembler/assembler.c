@@ -6,14 +6,20 @@
 
 #define MAX_INST_SIZE 4
 #define MAX_LABEL_SIZE 101
+#define MAX_CELL_STR_VAL 8
+
+typedef union {
+    int as_int;
+    char as_str[MAX_CELL_STR_VAL];
+} Cell_Value;
 
 typedef struct {
     char key[MAX_LABEL_SIZE];
-    int value;
+    Cell_Value value;
 } Cell;
 
 typedef struct {
-    unsigned int size;
+    size_t size;
     Cell **cells;
 } Table;
 
@@ -39,9 +45,9 @@ void parse_inst(char *line, Inst *inst);
 
 Table *table_new();
 void table_delete(Table *t);
-void table_insert(Table *t, const char *k, int v);
+void table_insert(Table *t, const char *k, Cell_Value v);
 int table_contains(Table *t, const char *k);
-int table_get(Table *t, const char *k);
+Cell_Value table_get(Table *t, const char *k);
 
 int main(int argc, char **argv) {
     // @TODO: proper error handle
@@ -56,31 +62,31 @@ int main(int argc, char **argv) {
 
     Table *sym_table = table_new();
 
-    table_insert(sym_table, "SP", 0);
-    table_insert(sym_table, "LCL", 1);
-    table_insert(sym_table, "ARG", 2);
-    table_insert(sym_table, "THIS", 3);
-    table_insert(sym_table, "THAT", 4);
+    table_insert(sym_table, "SP", (Cell_Value){ .as_int = 0 });
+    table_insert(sym_table, "LCL", (Cell_Value){ .as_int = 1 });
+    table_insert(sym_table, "ARG", (Cell_Value){ .as_int = 2 });
+    table_insert(sym_table, "THIS", (Cell_Value){ .as_int = 3 });
+    table_insert(sym_table, "THAT", (Cell_Value){ .as_int = 4 });
 
-    table_insert(sym_table, "SCREEN", 16384);
-    table_insert(sym_table, "KBD", 24576);
+    table_insert(sym_table, "SCREEN", (Cell_Value){ .as_int = 16384 });
+    table_insert(sym_table, "KBD", (Cell_Value){ .as_int = 24576 });
 
-    table_insert(sym_table, "R0", 0);
-    table_insert(sym_table, "R1", 1);
-    table_insert(sym_table, "R2", 2);
-    table_insert(sym_table, "R3", 3);
-    table_insert(sym_table, "R4", 4);
-    table_insert(sym_table, "R5", 5);
-    table_insert(sym_table, "R6", 6);
-    table_insert(sym_table, "R7", 7);
-    table_insert(sym_table, "R8", 8);
-    table_insert(sym_table, "R9", 9);
-    table_insert(sym_table, "R10", 10);
-    table_insert(sym_table, "R11", 11);
-    table_insert(sym_table, "R12", 12);
-    table_insert(sym_table, "R13", 13);
-    table_insert(sym_table, "R14", 14);
-    table_insert(sym_table, "R15", 15);
+    table_insert(sym_table, "R0", (Cell_Value){ .as_int = 0 });
+    table_insert(sym_table, "R1", (Cell_Value){ .as_int = 1 });
+    table_insert(sym_table, "R2", (Cell_Value){ .as_int = 2 });
+    table_insert(sym_table, "R3", (Cell_Value){ .as_int = 3 });
+    table_insert(sym_table, "R4", (Cell_Value){ .as_int = 4 });
+    table_insert(sym_table, "R5", (Cell_Value){ .as_int = 5 });
+    table_insert(sym_table, "R6", (Cell_Value){ .as_int = 6 });
+    table_insert(sym_table, "R7", (Cell_Value){ .as_int = 7 });
+    table_insert(sym_table, "R8", (Cell_Value){ .as_int = 8 });
+    table_insert(sym_table, "R9", (Cell_Value){ .as_int = 9 });
+    table_insert(sym_table, "R10", (Cell_Value){ .as_int = 10 });
+    table_insert(sym_table, "R11", (Cell_Value){ .as_int = 11 });
+    table_insert(sym_table, "R12", (Cell_Value){ .as_int = 12 });
+    table_insert(sym_table, "R13", (Cell_Value){ .as_int = 13 });
+    table_insert(sym_table, "R14", (Cell_Value){ .as_int = 14 });
+    table_insert(sym_table, "R15", (Cell_Value){ .as_int = 15 });
 
     char *line = NULL;
     size_t line_size = 0;
@@ -102,7 +108,7 @@ int main(int argc, char **argv) {
         assert(inst.type != -1);
 
         if (inst.type == INST_L) {
-            table_insert(sym_table, inst.label, line_num);
+            table_insert(sym_table, inst.label, (Cell_Value){ .as_int = line_num });
         } else {
             line_num++;
         }
@@ -115,6 +121,65 @@ int main(int argc, char **argv) {
     f = fopen(file_name, "r");
     // @TODO: proper error handle
     assert(f != NULL);
+
+    Table *dest_table = table_new();
+
+    table_insert(dest_table, "M", (Cell_Value){ .as_str = "001" });
+    table_insert(dest_table, "D", (Cell_Value){ .as_str = "010" });
+    table_insert(dest_table, "MD", (Cell_Value){ .as_str = "011" });
+    table_insert(dest_table, "A", (Cell_Value){ .as_str = "100" });
+    table_insert(dest_table, "AM", (Cell_Value){ .as_str = "101" });
+    table_insert(dest_table, "AD", (Cell_Value){ .as_str = "110" });
+    table_insert(dest_table, "AMD", (Cell_Value){ .as_str = "111" });
+
+    Table *jump_table = table_new();
+
+    table_insert(jump_table, "JGT", (Cell_Value){ .as_str = "001" });
+    table_insert(jump_table, "JEQ", (Cell_Value){ .as_str = "010" });
+    table_insert(jump_table, "JGE", (Cell_Value){ .as_str = "011" });
+    table_insert(jump_table, "JLT", (Cell_Value){ .as_str = "100" });
+    table_insert(jump_table, "JNE", (Cell_Value){ .as_str = "101" });
+    table_insert(jump_table, "JLE", (Cell_Value){ .as_str = "110" });
+    table_insert(jump_table, "JMP", (Cell_Value){ .as_str = "111" });
+
+    Table *comp_table = table_new();
+
+    table_insert(comp_table, "0", (Cell_Value){ .as_str = "0101010" });
+    table_insert(comp_table, "1", (Cell_Value){ .as_str = "0111111" });
+    table_insert(comp_table, "-1", (Cell_Value){ .as_str = "0111010" });
+    table_insert(comp_table, "D", (Cell_Value){ .as_str = "0001100" });
+    table_insert(comp_table, "A", (Cell_Value){ .as_str = "0110000" });
+    table_insert(comp_table, "M", (Cell_Value){ .as_str = "1110000" });
+
+    table_insert(comp_table, "!D", (Cell_Value){ .as_str = "0001101" });
+    table_insert(comp_table, "!A", (Cell_Value){ .as_str = "0110001" });
+    table_insert(comp_table, "!M", (Cell_Value){ .as_str = "1110001" });
+
+    table_insert(comp_table, "-D", (Cell_Value){ .as_str = "0001111" });
+    table_insert(comp_table, "-A", (Cell_Value){ .as_str = "0110011" });
+    table_insert(comp_table, "-M", (Cell_Value){ .as_str = "1110011" });
+
+    table_insert(comp_table, "D+1", (Cell_Value){ .as_str = "0011111" });
+    table_insert(comp_table, "A+1", (Cell_Value){ .as_str = "0110111" });
+    table_insert(comp_table, "M+1", (Cell_Value){ .as_str = "1110111" });
+
+    table_insert(comp_table, "D-1", (Cell_Value){ .as_str = "0001110" });
+    table_insert(comp_table, "A-1", (Cell_Value){ .as_str = "0110010" });
+    table_insert(comp_table, "M-1", (Cell_Value){ .as_str = "1110010" });
+
+    table_insert(comp_table, "D+A", (Cell_Value){ .as_str = "0000010" });
+    table_insert(comp_table, "D+M", (Cell_Value){ .as_str = "1000010" });
+    table_insert(comp_table, "D-A", (Cell_Value){ .as_str = "0010011" });
+    table_insert(comp_table, "D-M", (Cell_Value){ .as_str = "1010011" });
+
+    table_insert(comp_table, "A-D", (Cell_Value){ .as_str = "0000111" });
+    table_insert(comp_table, "M-D", (Cell_Value){ .as_str = "1000111" });
+
+    table_insert(comp_table, "D&A", (Cell_Value){ .as_str = "0000000" });
+    table_insert(comp_table, "D&M", (Cell_Value){ .as_str = "1000000" });
+
+    table_insert(comp_table, "D|A", (Cell_Value){ .as_str = "0010101" });
+    table_insert(comp_table, "D|M", (Cell_Value){ .as_str = "1010101" });
 
     line = NULL;
     line_size = 0;
@@ -139,9 +204,9 @@ int main(int argc, char **argv) {
                 int val = atoi(inst.label);
                 if (val == 0) {
                     if (table_contains(sym_table, inst.label)) {
-                        val = table_get(sym_table, inst.label);
+                        val = table_get(sym_table, inst.label).as_int;
                     } else {
-                        table_insert(sym_table, inst.label, var_addr);
+                        table_insert(sym_table, inst.label, (Cell_Value){ .as_int = var_addr });
                         val = var_addr;
                         var_addr++;
                     }
@@ -174,6 +239,39 @@ int main(int argc, char **argv) {
             } break;
 
             case INST_C: {
+                char dest[MAX_CELL_STR_VAL] = "";
+                char jump[MAX_CELL_STR_VAL] = "";
+                char comp[MAX_CELL_STR_VAL] = "";
+
+                if (strlen(inst.dest) == 0) {
+                    dest[0] = '0';
+                    dest[1] = '0';
+                    dest[2] = '0';
+                    dest[3] = '\0';
+                } else {
+                    Cell_Value cv = table_get(dest_table, inst.dest);
+                    strcpy(dest, cv.as_str);
+                }
+
+                if (strlen(inst.jump) == 0) {
+                    jump[0] = '0';
+                    jump[1] = '0';
+                    jump[2] = '0';
+                    jump[3] = '\0';
+                } else {
+                    Cell_Value cv = table_get(jump_table, inst.jump);
+                    strcpy(jump, cv.as_str);
+                }
+
+                Cell_Value cv = table_get(comp_table, inst.comp);
+                strcpy(comp, cv.as_str);
+
+                char code[17] = "111";
+                strcat(code, comp);
+                strcat(code, dest);
+                strcat(code, jump);
+
+                printf("%16s\n", code);
             } break;
 
             default:
@@ -183,10 +281,9 @@ int main(int argc, char **argv) {
     fclose(f);
     free(line);
     table_delete(sym_table);
-
-    //for (int i = 0; i < sym_table->size; ++i) {
-    //    printf("%20s - %5d\n", sym_table->cells[i]->key, sym_table->cells[i]->value);
-    //}
+    table_delete(dest_table);
+    table_delete(jump_table);
+    table_delete(comp_table);
 
     return 0;
 }
@@ -208,7 +305,7 @@ void table_delete(Table *t) {
     free(t);
 }
 
-void table_insert(Table *t, const char *k, int v) {
+void table_insert(Table *t, const char *k, Cell_Value v) {
     t->size++;
 
     t->cells = realloc(t->cells, t->size * sizeof(Cell));
@@ -232,14 +329,15 @@ int table_contains(Table *t, const char *k) {
     return 0;
 }
 
-int table_get(Table *t, const char *k) {
+Cell_Value table_get(Table *t, const char *k) {
     for (int i = 0; i < t->size; ++i) {
         if (strcmp(t->cells[i]->key, k) == 0) {
             return t->cells[i]->value;
         }
     }
 
-    return -1;
+    Cell_Value cv = { .as_int = -1 };
+    return cv;
 }
 
 void trim_left(char *s) {
