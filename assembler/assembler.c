@@ -84,10 +84,11 @@ int main(int argc, char **argv) {
 
     char *line = NULL;
     size_t line_size = 0;
+
+    size_t line_num = 0;
     while (getline(&line, &line_size, f) != -1) {
         parse_line(line);
         if (strlen(line) == 0) continue;
-        printf("%15s | ", line);
 
         Inst inst = {
             .type = -1,
@@ -98,15 +99,94 @@ int main(int argc, char **argv) {
         };
 
         parse_inst(line, &inst);
-
         assert(inst.type != -1);
-        printf("type: %d label: %15s dest: %3s comp: %3s jmp: %3s\n",
-                inst.type, inst.label, inst.dest, inst.comp, inst.jump);
+
+        if (inst.type == INST_L) {
+            table_insert(sym_table, inst.label, line_num);
+        } else {
+            line_num++;
+        }
     }
 
+    fclose(f);
+    free(line);
+
+    // @TODO: validate file
+    f = fopen(file_name, "r");
+    // @TODO: proper error handle
+    assert(f != NULL);
+
+    line = NULL;
+    line_size = 0;
+    size_t var_addr = 16;
+    while (getline(&line, &line_size, f) != -1) {
+        parse_line(line);
+        if (strlen(line) == 0) continue;
+
+        Inst inst = {
+            .type = -1,
+            .label = "",
+            .dest = "",
+            .comp = "",
+            .jump = ""
+        };
+
+        parse_inst(line, &inst);
+        assert(inst.type != -1);
+
+        switch (inst.type) {
+            case INST_A: {
+                int val = atoi(inst.label);
+                if (val == 0) {
+                    if (table_contains(sym_table, inst.label)) {
+                        val = table_get(sym_table, inst.label);
+                    } else {
+                        table_insert(sym_table, inst.label, var_addr);
+                        val = var_addr;
+                        var_addr++;
+                    }
+                }
+
+                char binary[17] = "";
+                int i = 0;
+
+                do {
+                    sprintf(&binary[i], "%d", val % 2);
+                    val = val / 2;
+                    i++;
+                } while (val != 0);
+
+                for (int j = 0; j < (i / 2); ++j) {
+                    char tmp = binary[j];
+                    binary[j] = binary[i - 1 - j];
+                    binary[i - 1 - j] = tmp;
+                }
+
+                char code[17] = "";
+                for (int j = 0; j < 17 - i - 1; ++j) {
+                    strcpy(&code[j], "0");
+                }
+                code[17] = '\0';
+
+                strcat(code, binary);
+
+                printf("%16s\n", code);
+            } break;
+
+            case INST_C: {
+            } break;
+
+            default:
+        }
+    }
+
+    fclose(f);
     free(line);
     table_delete(sym_table);
-    fclose(f);
+
+    //for (int i = 0; i < sym_table->size; ++i) {
+    //    printf("%20s - %5d\n", sym_table->cells[i]->key, sym_table->cells[i]->value);
+    //}
 
     return 0;
 }
