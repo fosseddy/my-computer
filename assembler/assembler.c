@@ -21,10 +21,10 @@ typedef enum {
     INST_A = 0,
     INST_C,
     INST_L
-} Inst_type;
+} Inst_Type;
 
 typedef struct {
-    Inst_type type;
+    Inst_Type type;
     char dest[MAX_INST_SIZE];
     char comp[MAX_INST_SIZE];
     char jump[MAX_INST_SIZE];
