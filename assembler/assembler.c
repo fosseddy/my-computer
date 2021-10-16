@@ -33,7 +33,8 @@ typedef struct {
 
 void trim_left(char *s);
 void trim_right(char *s);
-Table table_new();
+
+Table *table_new();
 void table_delete(Table *t);
 void table_insert(Table *t, const char *k, int v);
 int table_contains(Table *t, const char *k);
@@ -50,33 +51,33 @@ int main(int argc, char **argv) {
     // @TODO: proper error handle
     assert(f != NULL);
 
-    Table sym_table = table_new();
+    Table *sym_table = table_new();
 
-    table_insert(&sym_table, "SP", 0);
-    table_insert(&sym_table, "LCL", 1);
-    table_insert(&sym_table, "ARG", 2);
-    table_insert(&sym_table, "THIS", 3);
-    table_insert(&sym_table, "THAT", 4);
+    table_insert(sym_table, "SP", 0);
+    table_insert(sym_table, "LCL", 1);
+    table_insert(sym_table, "ARG", 2);
+    table_insert(sym_table, "THIS", 3);
+    table_insert(sym_table, "THAT", 4);
 
-    table_insert(&sym_table, "SCREEN", 16384);
-    table_insert(&sym_table, "KBD", 24576);
+    table_insert(sym_table, "SCREEN", 16384);
+    table_insert(sym_table, "KBD", 24576);
 
-    table_insert(&sym_table, "R0", 0);
-    table_insert(&sym_table, "R1", 1);
-    table_insert(&sym_table, "R2", 2);
-    table_insert(&sym_table, "R3", 3);
-    table_insert(&sym_table, "R4", 4);
-    table_insert(&sym_table, "R5", 5);
-    table_insert(&sym_table, "R6", 6);
-    table_insert(&sym_table, "R7", 7);
-    table_insert(&sym_table, "R8", 8);
-    table_insert(&sym_table, "R9", 9);
-    table_insert(&sym_table, "R10", 10);
-    table_insert(&sym_table, "R11", 11);
-    table_insert(&sym_table, "R12", 12);
-    table_insert(&sym_table, "R13", 13);
-    table_insert(&sym_table, "R14", 14);
-    table_insert(&sym_table, "R15", 15);
+    table_insert(sym_table, "R0", 0);
+    table_insert(sym_table, "R1", 1);
+    table_insert(sym_table, "R2", 2);
+    table_insert(sym_table, "R3", 3);
+    table_insert(sym_table, "R4", 4);
+    table_insert(sym_table, "R5", 5);
+    table_insert(sym_table, "R6", 6);
+    table_insert(sym_table, "R7", 7);
+    table_insert(sym_table, "R8", 8);
+    table_insert(sym_table, "R9", 9);
+    table_insert(sym_table, "R10", 10);
+    table_insert(sym_table, "R11", 11);
+    table_insert(sym_table, "R12", 12);
+    table_insert(sym_table, "R13", 13);
+    table_insert(sym_table, "R14", 14);
+    table_insert(sym_table, "R15", 15);
 
     char *line = NULL;
     size_t line_size = 0;
@@ -168,14 +169,17 @@ int main(int argc, char **argv) {
     }
 
     free(line);
-    table_delete(&sym_table);
+    table_delete(sym_table);
     fclose(f);
 
     return 0;
 }
 
-Table table_new() {
-    Table t = { .size = 0, .cells = NULL };
+Table *table_new() {
+    Table *t = malloc(sizeof(Table));
+    t->size = 0;
+    t->cells = NULL;
+
     return t;
 }
 
@@ -185,6 +189,7 @@ void table_delete(Table *t) {
     }
 
     free(t->cells);
+    free(t);
 }
 
 void table_insert(Table *t, const char *k, int v) {
