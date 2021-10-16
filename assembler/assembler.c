@@ -119,8 +119,26 @@ int main(int argc, char **argv) {
 
     // @TODO: validate file
     f = fopen(file_name, "r");
+
+    char out_file_name[strlen(file_name) + 2];
+    int i = 0;
+    for (i = 0; i < strlen(file_name); ++i) {
+        out_file_name[i] = file_name[i];
+        if (file_name[i] == '.') {
+            break;
+        }
+    }
+
+    out_file_name[i+1] = 'h';
+    out_file_name[i+2] = 'a';
+    out_file_name[i+3] = 'c';
+    out_file_name[i+4] = 'k';
+    out_file_name[i+5] = '\0';
+
+    FILE *out = fopen(out_file_name, "w");
     // @TODO: proper error handle
     assert(f != NULL);
+    assert(out != NULL);
 
     Table *dest_table = table_new();
 
@@ -235,7 +253,7 @@ int main(int argc, char **argv) {
 
                 strcat(code, binary);
 
-                printf("%16s\n", code);
+                fprintf(out, "%16s\n", code);
             } break;
 
             case INST_C: {
@@ -271,7 +289,7 @@ int main(int argc, char **argv) {
                 strcat(code, dest);
                 strcat(code, jump);
 
-                printf("%16s\n", code);
+                fprintf(out, "%16s\n", code);
             } break;
 
             default:
@@ -279,6 +297,7 @@ int main(int argc, char **argv) {
     }
 
     fclose(f);
+    fclose(out);
     free(line);
     table_delete(sym_table);
     table_delete(dest_table);
