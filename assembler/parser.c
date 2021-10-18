@@ -2,11 +2,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-
 #include "parser.h"
 
 static void trim_left(char *s);
 static void trim_right(char *s);
+static void dump_str(char *s);
 
 Parser make_parser(const char *file_path)
 {
@@ -23,13 +23,17 @@ Parser make_parser(const char *file_path)
 bool parser_peek_line(Parser *p)
 {
     for (;;) {
-        int read = getline(&p->line, &p->line_size, p->file);
+        ssize_t read = getline(&p->line, &p->line_size, p->file);
 
         if (read == -1) {
             fclose(p->file);
             free(p->line);
             return false;
         }
+
+        printf("LINE BEFORE: ");
+        dump_str(p->line);
+        printf("\n");
 
         trim_left(p->line);
 
@@ -48,10 +52,9 @@ bool parser_peek_line(Parser *p)
 
         trim_right(p->line);
 
-        //for (int i = 0; i <= strlen(p->line); ++i) {
-        //    printf("%d ", p->line[i]);
-        //}
-        //printf("\n");
+        printf("LINE AFTER : ");
+        dump_str(p->line);
+        printf("\n");
 
         if (strlen(p->line) == 0) continue;
 
@@ -59,9 +62,9 @@ bool parser_peek_line(Parser *p)
     }
 }
 
-Instruction parser_parse_inst(Parser *p)
+Inst parser_parse_inst(Parser *p)
 {
-    Instruction inst = { .type = -1 };
+    Inst inst = { .type = -1 };
 
     // instruction A starts with @
     if (strncmp(p->line, "@", 1) == 0) {
@@ -124,19 +127,12 @@ Instruction parser_parse_inst(Parser *p)
 
 static void trim_left(char *s)
 {
-    int pad = 0;
-    int len = strlen(s);
-
-    for (int i = 0; i < len; ++i) {
-        if (isspace(s[i])) {
-            pad++;
-        } else {
-            break;
-        }
-    }
+    size_t pad = 0;
+    while (isspace(s[pad])) pad++;
 
     if (pad > 0) {
-        for (int i = pad; i <= len; ++i) {
+        // less or equal to include '\0'
+        for (size_t i = pad; i <= strlen(s); ++i) {
             s[i - pad] = s[i];
         }
     }
@@ -144,12 +140,22 @@ static void trim_left(char *s)
 
 static void trim_right(char *s)
 {
-    int len = strlen(s);
+    size_t pad = strlen(s) - 1;
+    while (isspace(s[pad])) pad--;
+    s[pad + 1] = '\0';
+}
 
-    for (int i = len - 1; i >= 0; --i) {
-        if (!isspace(s[i])) {
-            s[i + 1] = '\0';
-            break;
+static void dump_str(char *s)
+{
+    for (int i = 0; i <= strlen(s); ++i) {
+        if (s[i] == '\n') {
+            printf("\\n", s[i]);
+        } else if (s[i] == '\0') {
+            printf("\\0");
+        } else if (isspace(s[i])) {
+            printf(".");
+        } else {
+            printf("%c", s[i]);
         }
     }
 }
