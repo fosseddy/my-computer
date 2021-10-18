@@ -16,7 +16,8 @@ void populate_sym_table(Symbol_Table *sym_table, const char *in_file);
 void generate_and_write_machine_code(Symbol_Table *sym_table,
         const char *in_file, const char *out_file);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     assert(argc > 1);
 
     const char *in_file = argv[1];
