@@ -47,7 +47,10 @@ void symbol_table_insert(Symbol_Table *t, const char *k, int v)
     t->cells = realloc(t->cells, t->size * sizeof(Cell));
     assert(t->cells != NULL);
 
-    t->cells[t->size - 1] = (Cell) { .key = (char *) k, .value = v };
+    Cell c = { .value = v };
+    strcpy(c.key, k);
+
+    t->cells[t->size - 1] = c;
 }
 
 bool symbol_table_contains(Symbol_Table *t, const char *k)

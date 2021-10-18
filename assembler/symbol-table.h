@@ -3,8 +3,10 @@
 
 #include <stdbool.h>
 
+#include "parser.h"
+
 typedef struct {
-    char *key;
+    char key[LABEL_CAPACITY];
     int value;
 } Cell;
 
