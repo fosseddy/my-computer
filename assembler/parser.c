@@ -10,6 +10,7 @@ static void trim_right(char *s);
 Parser make_parser(const char *file_path)
 {
     FILE *f = fopen(file_path, "r");
+    // @TODO: proper error handle
     assert(f != NULL);
 
     return (Parser) {
