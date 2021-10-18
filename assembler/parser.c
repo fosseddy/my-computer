@@ -6,7 +6,6 @@
 
 static void trim_left(char *s);
 static void trim_right(char *s);
-static void dump_str(char *s);
 
 Parser make_parser(const char *file_path)
 {
@@ -31,30 +30,20 @@ bool parser_peek_line(Parser *p)
             return false;
         }
 
-        printf("LINE BEFORE: ");
-        dump_str(p->line);
-        printf("\n");
-
         trim_left(p->line);
 
         if (strstr(p->line, "//") != NULL) {
             // whole line is comment
-            if (strncmp(p->line, "//", 2) == 0) {
-                continue;
-            }
+            if (strncmp(p->line, "//", 2) == 0) continue;
 
             // line has inline comment
             char line_copy[strlen(p->line)];
             strcpy(line_copy, p->line);
-            char *line_with_no_comment = strtok(line_copy, "//");
-            strcpy(p->line, line_with_no_comment);
+            char *line_without_comment = strtok(line_copy, "//");
+            strcpy(p->line, line_without_comment);
         }
 
         trim_right(p->line);
-
-        printf("LINE AFTER : ");
-        dump_str(p->line);
-        printf("\n");
 
         if (strlen(p->line) == 0) continue;
 
@@ -62,31 +51,34 @@ bool parser_peek_line(Parser *p)
     }
 }
 
-Inst parser_parse_inst(Parser *p)
+Instruction parser_parse_instruction(Parser *p)
 {
-    Inst inst = { .type = -1 };
+    assert(strlen(p->line) > 0);
+
+    Instruction inst = { .type = -1 };
 
     // instruction A starts with @
     if (strncmp(p->line, "@", 1) == 0) {
-        inst.type = INST_TYPE_A;
+        assert(strlen(p->line) - 1 < LABEL_CAPACITY);
 
-        assert(strlen(p->line) - 1 < MAX_LABEL_SIZE);
+        inst.type = INSTRUCTION_TYPE_A;
         // remove '@' from inst: @R1 -> R1
-        for (int i = 1; i <= strlen(p->line); ++i) {
+        for (size_t i = 1; i <= strlen(p->line); ++i) {
             inst.label[i - 1] = p->line[i];
         }
     // instruction L starts with '(' and ends with ')'
     } else if (strncmp(p->line, "(", 1) == 0) {
-        inst.type = INST_TYPE_L;
+        assert(strlen(p->line) - 2 < LABEL_CAPACITY);
 
-        assert(strlen(p->line) - 2 < MAX_LABEL_SIZE);
+        inst.type = INSTRUCTION_TYPE_L;
         // remove '(' and ')' from label: (LABEL_NAME) -> LABEL_NAME
-        for (int i = 1; i < strlen(p->line) - 1; ++i) {
+        size_t i = 1;
+        for (; i < strlen(p->line) - 1; ++i) {
             inst.label[i - 1] = p->line[i];
         }
-        inst.label[strlen(p->line) - 2] = '\0';
+        inst.label[i - 1] = '\0';
     } else {
-        inst.type = INST_TYPE_C;
+        inst.type = INSTRUCTION_TYPE_C;
 
         // if instruction C includes '=', then extract dest
         if (strchr(p->line, '=') != NULL) {
@@ -95,7 +87,7 @@ Inst parser_parse_inst(Parser *p)
 
             char *dest = strtok(line_copy, "=");
 
-            assert(strlen(dest) < MAX_INST_SIZE);
+            assert(strlen(dest) < INSTRUCTION_CAPACITY);
             strcpy(inst.dest, dest);
 
             char *next_tok = strtok(NULL, "=");
@@ -112,11 +104,11 @@ Inst parser_parse_inst(Parser *p)
 
             char *jump = strtok(NULL, ";");
 
-            assert(strlen(jump) < MAX_INST_SIZE);
+            assert(strlen(jump) < INSTRUCTION_CAPACITY);
             strcpy(inst.jump, jump);
         }
 
-        assert(strlen(p->line) < MAX_INST_SIZE);
+        assert(strlen(p->line) < INSTRUCTION_CAPACITY);
         strcpy(inst.comp, p->line);
     }
 
@@ -131,7 +123,6 @@ static void trim_left(char *s)
     while (isspace(s[pad])) pad++;
 
     if (pad > 0) {
-        // less or equal to include '\0'
         for (size_t i = pad; i <= strlen(s); ++i) {
             s[i - pad] = s[i];
         }
@@ -140,22 +131,9 @@ static void trim_left(char *s)
 
 static void trim_right(char *s)
 {
+    if (*s == '\0') return;
+
     size_t pad = strlen(s) - 1;
     while (isspace(s[pad])) pad--;
     s[pad + 1] = '\0';
-}
-
-static void dump_str(char *s)
-{
-    for (int i = 0; i <= strlen(s); ++i) {
-        if (s[i] == '\n') {
-            printf("\\n", s[i]);
-        } else if (s[i] == '\0') {
-            printf("\\0");
-        } else if (isspace(s[i])) {
-            printf(".");
-        } else {
-            printf("%c", s[i]);
-        }
-    }
 }
