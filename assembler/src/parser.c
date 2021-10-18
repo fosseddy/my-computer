@@ -1,7 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <sys/types.h>
+
 #include "parser.h"
 
 static void trim_left(char *s);
@@ -10,7 +14,6 @@ static void trim_right(char *s);
 Parser make_parser(const char *file_path)
 {
     FILE *f = fopen(file_path, "r");
-    // @TODO: proper error handle
     assert(f != NULL);
 
     return (Parser) {
@@ -56,7 +59,7 @@ Instruction parser_parse_instruction(Parser *p)
 {
     assert(strlen(p->line) > 0);
 
-    Instruction inst = { .type = -1 };
+    Instruction inst = {0};
 
     // instruction A starts with @
     if (strncmp(p->line, "@", 1) == 0) {
@@ -112,8 +115,6 @@ Instruction parser_parse_instruction(Parser *p)
         assert(strlen(p->line) < INSTRUCTION_CAPACITY);
         strcpy(inst.comp, p->line);
     }
-
-    assert(inst.type != -1);
 
     return inst;
 }
