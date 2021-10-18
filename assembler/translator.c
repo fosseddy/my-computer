@@ -1,14 +1,13 @@
 #include <string.h>
 #include <assert.h>
 
-#include "parser.h"
 #include "translator.h"
 
 #define DEST_TABLE_LENGTH 7
 #define JUMP_TABLE_LENGTH 7
 #define COMP_TABLE_LENGTH 28
 
-static char *translation_record_get(Translation_Table *t, size_t t_len, char *k);
+static char *translation_table_get(Translation_Table *t, size_t t_len, char *k);
 
 static Translation_Table dest_table[DEST_TABLE_LENGTH] = {
     { .key = "M", .value = "001" },
@@ -103,7 +102,7 @@ void translator_translate_inst_c(Instruction *inst, char *out)
     if (strlen(inst->dest) == 0) {
         strcpy(dest, "000");
     } else {
-        char *v = translation_record_get(dest_table, DEST_TABLE_LENGTH, inst->dest);
+        char *v = translation_table_get(dest_table, DEST_TABLE_LENGTH, inst->dest);
         assert(v != NULL);
         strcpy(dest, v);
     }
@@ -111,12 +110,12 @@ void translator_translate_inst_c(Instruction *inst, char *out)
     if (strlen(inst->jump) == 0) {
         strcpy(jump, "000");
     } else {
-        char *v = translation_record_get(jump_table, JUMP_TABLE_LENGTH, inst->jump);
+        char *v = translation_table_get(jump_table, JUMP_TABLE_LENGTH, inst->jump);
         assert(v != NULL);
         strcpy(jump, v);
     }
 
-    char *v = translation_record_get(comp_table, COMP_TABLE_LENGTH, inst->comp);
+    char *v = translation_table_get(comp_table, COMP_TABLE_LENGTH, inst->comp);
     assert(v != NULL);
     strcpy(comp, v);
 
@@ -126,7 +125,7 @@ void translator_translate_inst_c(Instruction *inst, char *out)
     strcat(out, jump);
 }
 
-static char *translation_record_get(Translation_Table *t, size_t t_len, char *k)
+static char *translation_table_get(Translation_Table *t, size_t t_len, char *k)
 {
     for (size_t i = 0; i < t_len; ++i) {
         if (strcmp(t[i].key, k) == 0) {

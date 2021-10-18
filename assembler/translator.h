@@ -1,6 +1,8 @@
 #ifndef TRANSLATOR_H
 #define TRANSLATOR_H
 
+#include "parser.h"
+
 #define BINARY_LENGTH 17
 
 typedef struct {
