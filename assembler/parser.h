@@ -17,18 +17,18 @@ typedef enum {
     INST_TYPE_A = 0,
     INST_TYPE_C,
     INST_TYPE_L
-} Instruction_Type;
+} Inst_Type;
 
 typedef struct {
-    Instruction_Type type;
+    Inst_Type type;
     char dest[MAX_INST_SIZE];
     char comp[MAX_INST_SIZE];
     char jump[MAX_INST_SIZE];
     char label[MAX_LABEL_SIZE];
-} Instruction;
+} Inst;
 
 Parser make_parser(const char *file_path);
 bool parser_peek_line(Parser *p);
-Instruction parser_parse_inst(Parser *p);
+Inst parser_parse_inst(Parser *p);
 
 #endif
