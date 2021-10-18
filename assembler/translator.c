@@ -135,8 +135,3 @@ static char *translation_table_get(Translation_Table *t, size_t t_len, char *k)
 
     return NULL;
 }
-
-
-
-
-
