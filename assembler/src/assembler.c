@@ -75,7 +75,6 @@ void generate_and_write_machine_code(Symbol_Table *sym_table,
                 char code[BINARY_LENGTH];
                 translator_translate_inst_a(val, code);
                 fprintf(f_out, "%s\n", code);
-
             } break;
 
             case INSTRUCTION_TYPE_C: {
