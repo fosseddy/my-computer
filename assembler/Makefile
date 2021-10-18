@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -std=c11 -pedantic -ggdb
+CFLAGS=-Wall -Wextra -std=c11 -pedantic
 
-assembler: ./src/*.c
-	$(CC) $(CFLAGS) -o assembler ./src/*.c
+assembler: ./*.c
+	$(CC) $(CFLAGS) -o assembler ./*.c
