@@ -60,8 +60,6 @@ Instruction parser_parse_instruction(Parser *p)
 {
     Instruction inst = {0};
 
-    printf("%s\n", p->line);
-
     char *op= strtok(p->line, " ");
     assert(op != NULL);
 
@@ -69,6 +67,22 @@ Instruction parser_parse_instruction(Parser *p)
         inst.op_type = OP_TYPE_PUSH;
     } else if (strcmp(op, "add") == 0) {
         inst.op_type = OP_TYPE_ADD;
+    } else if (strcmp(op, "sub") == 0) {
+        inst.op_type = OP_TYPE_SUB;
+    } else if (strcmp(op, "eq") == 0) {
+        inst.op_type = OP_TYPE_EQ;
+    } else if (strcmp(op, "lt") == 0) {
+        inst.op_type = OP_TYPE_LT;
+    } else if (strcmp(op, "gt") == 0) {
+        inst.op_type = OP_TYPE_GT;
+    } else if (strcmp(op, "and") == 0) {
+        inst.op_type = OP_TYPE_AND;
+    } else if (strcmp(op, "or") == 0) {
+        inst.op_type = OP_TYPE_OR;
+    } else if (strcmp(op, "not") == 0) {
+        inst.op_type = OP_TYPE_NOT;
+    } else if (strcmp(op, "neg") == 0) {
+        inst.op_type = OP_TYPE_NEG;
     } else {
         assert(0);
     }
@@ -109,19 +123,3 @@ static void trim_right(char *s)
     while (isspace(s[pad])) pad--;
     s[pad + 1] = '\0';
 }
-
-//static void dump_str(char *s)
-//{
-//    for (size_t i = 0; i <= strlen(s); ++i) {
-//        if (s[i] == '\n') {
-//            printf("\\n");
-//        } else if(isspace(s[i])) {
-//            printf(".");
-//        } else if(s[i] == '\0') {
-//            printf("\\0");
-//        } else {
-//            printf("%c", s[i]);
-//        }
-//    }
-//    printf("\n");
-//}

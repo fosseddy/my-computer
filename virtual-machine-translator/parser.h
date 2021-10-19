@@ -11,12 +11,25 @@ typedef struct {
 } Parser;
 
 typedef enum {
-    OP_TYPE_PUSH = 0,
+    OP_TYPE_UNINIT = 0,
+
+    OP_TYPE_PUSH,
+    OP_TYPE_POP,
+
     OP_TYPE_ADD,
+    OP_TYPE_SUB,
+    OP_TYPE_NEG,
+    OP_TYPE_EQ,
+    OP_TYPE_GT,
+    OP_TYPE_LT,
+    OP_TYPE_AND,
+    OP_TYPE_OR,
+    OP_TYPE_NOT,
 } Op_Type;
 
 typedef enum {
-    MEM_SEG_TYPE_CONST = 0
+    MEM_SEG_TYPE_UNINIT = 0,
+    MEM_SEG_TYPE_CONST,
 } Mem_Seg_Type;
 
 typedef struct {
