@@ -24,12 +24,21 @@ typedef enum {
     OP_TYPE_LT,
     OP_TYPE_AND,
     OP_TYPE_OR,
-    OP_TYPE_NOT,
+    OP_TYPE_NOT
 } Op_Type;
 
 typedef enum {
     MEM_SEG_TYPE_UNINIT = 0,
+
+    MEM_SEG_TYPE_LCL,
+    MEM_SEG_TYPE_ARG,
+    MEM_SEG_TYPE_THIS,
+    MEM_SEG_TYPE_THAT,
+
     MEM_SEG_TYPE_CONST,
+    MEM_SEG_TYPE_STATIC,
+    MEM_SEG_TYPE_TEMP,
+    MEM_SEG_TYPE_POINTER
 } Mem_Seg_Type;
 
 typedef struct {

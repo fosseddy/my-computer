@@ -63,6 +63,8 @@ Instruction parser_parse_instruction(Parser *p)
 
     if (strcmp(op, "push") == 0) {
         inst.op_type = OP_TYPE_PUSH;
+    } else if (strcmp(op, "pop") == 0) {
+        inst.op_type = OP_TYPE_POP;
     } else if (strcmp(op, "add") == 0) {
         inst.op_type = OP_TYPE_ADD;
     } else if (strcmp(op, "sub") == 0) {
@@ -88,8 +90,22 @@ Instruction parser_parse_instruction(Parser *p)
     char *mem_seg = strtok(NULL, " ");
     if (mem_seg == NULL) return inst;
 
-    if (strcmp(mem_seg, "constant") == 0) {
+    if (strcmp(mem_seg, "local") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_LCL;
+    } else if (strcmp(mem_seg, "argument") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_ARG;
+    } else if (strcmp(mem_seg, "this") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_THIS;
+    } else if (strcmp(mem_seg, "that") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_THAT;
+    } else if (strcmp(mem_seg, "constant") == 0) {
         inst.mem_seg_type = MEM_SEG_TYPE_CONST;
+    } else if (strcmp(mem_seg, "static") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_STATIC;
+    } else if (strcmp(mem_seg, "pointer") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_POINTER;
+    } else if (strcmp(mem_seg, "temp") == 0) {
+        inst.mem_seg_type = MEM_SEG_TYPE_TEMP;
     } else {
         assert(0);
     }
