@@ -3,6 +3,18 @@
 
 static size_t unique_count = 0;
 
+static void jump_to_top_value(FILE *f)
+{
+    fprintf(f, "@SP\n");
+    fprintf(f, "A=M-1\n");
+}
+
+static void dec_stack_pointer(FILE *f)
+{
+    fprintf(f, "@SP\n");
+    fprintf(f, "M=M-1\n");
+}
+
 void translator_translate_inst(Instruction *inst, FILE *f)
 {
     switch (inst->op_type) {
@@ -20,69 +32,54 @@ void translator_translate_inst(Instruction *inst, FILE *f)
         } break;
 
         case OP_TYPE_ADD: {
-            // a + b
             fprintf(f, "// ADD BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // M = b + a
+            dec_stack_pointer(f);
+            jump_to_top_value(f);
             fprintf(f, "M=D+M\n");
+
             fprintf(f, "// ADD END\n");
             fprintf(f, "\n");
         } break;
 
         case OP_TYPE_SUB: {
-            // a - b
             fprintf(f, "// SUB BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // M = a - b
+            dec_stack_pointer(f);
+            jump_to_top_value(f);
             fprintf(f, "M=M-D\n");
+
             fprintf(f, "// SUB END\n");
             fprintf(f, "\n");
         } break;
 
         case OP_TYPE_EQ: {
-            // a == b
             fprintf(f, "// EQ BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // D = a - b
+
+            dec_stack_pointer(f);
+
+            jump_to_top_value(f);
             fprintf(f, "D=M-D\n");
+
             // M = 0 (a not equal to b)
             fprintf(f, "M=0\n");
+
             // if (D == 0) M=1
             fprintf(f, "@eq_%li\n", unique_count);
             fprintf(f, "D;JNE\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
             // M = 1 (a equals to b)
+            jump_to_top_value(f);
             fprintf(f, "M=-1\n");
             fprintf(f, "(eq_%li)\n", unique_count);
+
             fprintf(f, "// EQ END\n");
             fprintf(f, "\n");
 
@@ -90,31 +87,28 @@ void translator_translate_inst(Instruction *inst, FILE *f)
         } break;
 
         case OP_TYPE_LT: {
-            // a < b
             fprintf(f, "// LT BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // D = a - b
+
+            dec_stack_pointer(f);
+
+            jump_to_top_value(f);
             fprintf(f, "D=M-D\n");
+
             // M = 0 (a not less then b)
             fprintf(f, "M=0\n");
+
             // if (D < 0) M=1
             fprintf(f, "@lt_%li\n", unique_count);
             fprintf(f, "D;JGE\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
             // M = 1 (a less then b)
+            jump_to_top_value(f);
             fprintf(f, "M=-1\n");
             fprintf(f, "(lt_%li)\n", unique_count);
+
             fprintf(f, "// LT END\n");
             fprintf(f, "\n");
 
@@ -122,31 +116,28 @@ void translator_translate_inst(Instruction *inst, FILE *f)
         } break;
 
         case OP_TYPE_GT: {
-            // a > b
             fprintf(f, "// GT BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // D = a - b
+
+            dec_stack_pointer(f);
+
+            jump_to_top_value(f);
             fprintf(f, "D=M-D\n");
+
             // M = 0 (a not greater then b)
             fprintf(f, "M=0\n");
+
             // if (D < 0) M=1
             fprintf(f, "@gt_%li\n", unique_count);
             fprintf(f, "D;JLE\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
             // M = 1 (a greater then b)
+            jump_to_top_value(f);
             fprintf(f, "M=-1\n");
             fprintf(f, "(gt_%li)\n", unique_count);
+
             fprintf(f, "// GT END\n");
             fprintf(f, "\n");
 
@@ -154,61 +145,51 @@ void translator_translate_inst(Instruction *inst, FILE *f)
         } break;
 
         case OP_TYPE_NEG: {
-            // a = -a
             fprintf(f, "// NEG BEGIN\n");
-            // M = -a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "M=-M\n");
+
             fprintf(f, "// NEG END\n");
             fprintf(f, "\n");
         } break;
 
         case OP_TYPE_AND: {
-            // a & b
             fprintf(f, "// AND BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // M = b & a
+
+            dec_stack_pointer(f);
+
+            jump_to_top_value(f);
             fprintf(f, "M=D&M\n");
+
             fprintf(f, "// AND END\n");
             fprintf(f, "\n");
         } break;
 
         case OP_TYPE_OR: {
-            // a | b
             fprintf(f, "// OR BEGIN\n");
-            // D = b
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "D=M\n");
-            // SP--
-            fprintf(f, "@SP\n");
-            fprintf(f, "M=M-1\n");
-            // M = a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
-            // M = b & a
+
+            dec_stack_pointer(f);
+
+            jump_to_top_value(f);
             fprintf(f, "M=D|M\n");
+
             fprintf(f, "// OR END\n");
             fprintf(f, "\n");
         } break;
 
         case OP_TYPE_NOT:
-            // !a
             fprintf(f, "// NOT BEGIN\n");
-            // M = !a
-            fprintf(f, "@SP\n");
-            fprintf(f, "A=M-1\n");
+
+            jump_to_top_value(f);
             fprintf(f, "M=!M\n");
+
             fprintf(f, "// NOT END\n");
             fprintf(f, "\n");
 
