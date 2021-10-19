@@ -10,8 +10,6 @@
 static void trim_left(char *s);
 static void trim_right(char *s);
 
-//static void dump_str(char *s);
-
 Parser make_parser(const char *file_path)
 {
     FILE *f = fopen(file_path, "r");
