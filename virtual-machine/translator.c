@@ -43,26 +43,27 @@ void translator_translate_inst(Instruction *inst, FILE *f)
                     fprintf(f, "@LCL\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-
                     if (inst->op_type == OP_TYPE_PUSH) {
                         fprintf(f, "A=D+A\n");
                         fprintf(f, "D=M\n");
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=D+A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -71,26 +72,27 @@ void translator_translate_inst(Instruction *inst, FILE *f)
                     fprintf(f, "@ARG\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-
                     if (inst->op_type == OP_TYPE_PUSH) {
                         fprintf(f, "A=D+A\n");
                         fprintf(f, "D=M\n");
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=D+A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -99,26 +101,27 @@ void translator_translate_inst(Instruction *inst, FILE *f)
                     fprintf(f, "@THIS\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-
                     if (inst->op_type == OP_TYPE_PUSH) {
                         fprintf(f, "A=D+A\n");
                         fprintf(f, "D=M\n");
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=D+A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -127,26 +130,27 @@ void translator_translate_inst(Instruction *inst, FILE *f)
                     fprintf(f, "@THAT\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-
                     if (inst->op_type == OP_TYPE_PUSH) {
                         fprintf(f, "A=D+A\n");
                         fprintf(f, "D=M\n");
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=D+A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -158,7 +162,10 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
+                    } else {
+                        assert(0);
                     }
                 } break;
 
@@ -170,12 +177,14 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         // @TODO: change for file name
                         fprintf(f, "@Foo.%li\n", inst->mem_addr);
                         fprintf(f, "M=D\n");
@@ -192,19 +201,21 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -225,19 +236,21 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
                         jump_to_stack_pointer(f);
                         fprintf(f, "M=D\n");
+
                         inc_stack_pointer(f);
                     } else {
                         fprintf(f, "D=A\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "M=D\n");
 
                         dec_stack_pointer(f);
-                        jump_to_stack_pointer(f);
 
+                        jump_to_stack_pointer(f);
                         fprintf(f, "D=M\n");
+
                         fprintf(f, "@R15\n");
                         fprintf(f, "A=M\n");
-
                         fprintf(f, "M=D\n");
                     }
                 } break;
@@ -247,34 +260,22 @@ void translator_translate_inst(Instruction *inst, FILE *f)
         } break;
 
         case OP_TYPE_ADD: {
-            fprintf(f, "// ADD BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
             dec_stack_pointer(f);
             jump_to_top_value(f);
             fprintf(f, "M=D+M\n");
-
-            fprintf(f, "// ADD END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_SUB: {
-            fprintf(f, "// SUB BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
             dec_stack_pointer(f);
             jump_to_top_value(f);
             fprintf(f, "M=M-D\n");
-
-            fprintf(f, "// SUB END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_EQ: {
-            fprintf(f, "// EQ BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
 
@@ -291,15 +292,10 @@ void translator_translate_inst(Instruction *inst, FILE *f)
             fprintf(f, "M=-1\n");
             fprintf(f, "(eq_%li)\n", unique_count);
 
-            fprintf(f, "// EQ END\n");
-            fprintf(f, "\n");
-
             unique_count++;
         } break;
 
         case OP_TYPE_LT: {
-            fprintf(f, "// LT BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
 
@@ -316,15 +312,10 @@ void translator_translate_inst(Instruction *inst, FILE *f)
             fprintf(f, "M=-1\n");
             fprintf(f, "(lt_%li)\n", unique_count);
 
-            fprintf(f, "// LT END\n");
-            fprintf(f, "\n");
-
             unique_count++;
         } break;
 
         case OP_TYPE_GT: {
-            fprintf(f, "// GT BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
 
@@ -341,25 +332,15 @@ void translator_translate_inst(Instruction *inst, FILE *f)
             fprintf(f, "M=-1\n");
             fprintf(f, "(gt_%li)\n", unique_count);
 
-            fprintf(f, "// GT END\n");
-            fprintf(f, "\n");
-
             unique_count++;
         } break;
 
         case OP_TYPE_NEG: {
-            fprintf(f, "// NEG BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "M=-M\n");
-
-            fprintf(f, "// NEG END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_AND: {
-            fprintf(f, "// AND BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
 
@@ -367,14 +348,9 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
             jump_to_top_value(f);
             fprintf(f, "M=D&M\n");
-
-            fprintf(f, "// AND END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_OR: {
-            fprintf(f, "// OR BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "D=M\n");
 
@@ -382,19 +358,11 @@ void translator_translate_inst(Instruction *inst, FILE *f)
 
             jump_to_top_value(f);
             fprintf(f, "M=D|M\n");
-
-            fprintf(f, "// OR END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_NOT: {
-            fprintf(f, "// NOT BEGIN\n");
-
             jump_to_top_value(f);
             fprintf(f, "M=!M\n");
-
-            fprintf(f, "// NOT END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_UNINIT: assert(0);

@@ -9,6 +9,9 @@
 
 void create_out_file_from_in_file(const char *in_file, char *out_file);
 
+// @TODO: change out_path using argv[0]
+// @TODO: create translator structure
+
 int main (int argc, char **argv)
 {
     assert(argc > 1);
