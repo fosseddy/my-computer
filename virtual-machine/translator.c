@@ -1,6 +1,7 @@
 #include <string.h>
 #include <assert.h>
 #include "translator.h"
+#include "path.h"
 
 #define TEMP_BASE_ADDR 5
 #define TEMP_MAX_ADDR 12
@@ -64,15 +65,13 @@ Translator make_translator(const char *file_path)
     FILE *file = fopen(file_path, "w");
     assert (file != NULL);
 
-    char file_name[256];
-    strcpy(file_name, file_path);
-    file_name[strlen(file_name) - 4] = '\0';
-
     Translator t = {
         .f = file,
         .unique_counter = 0
     };
 
+    char file_name[256];
+    path_get_file_name(file_name, file_path);
     strcpy((char *) t.file_name, file_name);
 
     return t;
