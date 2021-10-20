@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "translator.h"
 
@@ -64,16 +64,23 @@ Translator make_translator(const char *file_path)
     FILE *file = fopen(file_path, "w");
     assert (file != NULL);
 
-    return (Translator) {
+    char file_name[256];
+    strcpy(file_name, file_path);
+    file_name[strlen(file_name) - 4] = '\0';
+
+    Translator t = {
         .f = file,
-        .file_name = file_path,
         .unique_counter = 0
     };
+
+    strcpy((char *) t.file_name, file_name);
+
+    return t;
 }
 
 void free_translator(Translator *t)
 {
-    free(t->f);
+    fclose(t->f);
 }
 
 void translator_translate_inst(Translator *t, Instruction *inst)

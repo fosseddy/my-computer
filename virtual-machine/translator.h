@@ -6,7 +6,7 @@
 
 typedef struct {
     FILE *f;
-    const char *file_name;
+    const char file_name[256];
     size_t unique_counter;
 } Translator;
 
