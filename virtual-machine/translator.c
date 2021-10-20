@@ -2,9 +2,6 @@
 #include <assert.h>
 #include "translator.h"
 
-#define STATIC_BASE_ADDR 16
-#define STATIC_MAX_ADDR 255
-
 #define TEMP_BASE_ADDR 5
 #define TEMP_MAX_ADDR 12
 
@@ -32,6 +29,36 @@ static void inc_stack_pointer(FILE *f)
     fprintf(f, "M=M+1\n");
 }
 
+static void translate_push_pop_for(char *mem_seg, Instruction *inst, FILE *f)
+{
+    fprintf(f, "@%s\n", mem_seg);
+    fprintf(f, "D=M\n");
+    fprintf(f, "@%li\n", inst->mem_addr);
+    if (inst->op_type == OP_TYPE_PUSH) {
+        fprintf(f, "A=D+A\n");
+        fprintf(f, "D=M\n");
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "M=D\n");
+
+        inc_stack_pointer(f);
+    } else {
+        fprintf(f, "D=D+A\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "M=D\n");
+
+        dec_stack_pointer(f);
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "D=M\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "A=M\n");
+        fprintf(f, "M=D\n");
+    }
+}
+
 Translator make_translator(const char *file_path)
 {
     FILE *file = fopen(file_path, "w");
@@ -51,126 +78,24 @@ void free_translator(Translator *t)
 
 void translator_translate_inst(Translator *t, Instruction *inst)
 {
-    printf(t->file_name);
-    printf("\n");
     switch (inst->op_type) {
         case OP_TYPE_PUSH:
         case OP_TYPE_POP: {
             switch (inst->mem_seg_type) {
                 case MEM_SEG_TYPE_LCL: {
-                    fprintf(t->f, "@LCL\n");
-                    fprintf(t->f, "D=M\n");
-                    fprintf(t->f, "@%li\n", inst->mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
-                        fprintf(t->f, "A=D+A\n");
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=D+A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
+                    translate_push_pop_for("LCL", inst, t->f);
                 } break;
 
                 case MEM_SEG_TYPE_ARG: {
-                    fprintf(t->f, "@ARG\n");
-                    fprintf(t->f, "D=M\n");
-                    fprintf(t->f, "@%li\n", inst->mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
-                        fprintf(t->f, "A=D+A\n");
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=D+A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
+                    translate_push_pop_for("ARG", inst, t->f);
                 } break;
 
                 case MEM_SEG_TYPE_THIS: {
-                    fprintf(t->f, "@THIS\n");
-                    fprintf(t->f, "D=M\n");
-                    fprintf(t->f, "@%li\n", inst->mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
-                        fprintf(t->f, "A=D+A\n");
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=D+A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
+                    translate_push_pop_for("THIS", inst, t->f);
                 } break;
 
                 case MEM_SEG_TYPE_THAT: {
-                    fprintf(t->f, "@THAT\n");
-                    fprintf(t->f, "D=M\n");
-                    fprintf(t->f, "@%li\n", inst->mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
-                        fprintf(t->f, "A=D+A\n");
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=D+A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
+                    translate_push_pop_for("THAT", inst, t->f);
                 } break;
 
                 case MEM_SEG_TYPE_CONST: {
