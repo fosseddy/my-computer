@@ -36,75 +36,182 @@ static void inc_stack_pointer(FILE *f)
 void translator_translate_inst(Instruction *inst, FILE *f)
 {
     switch (inst->op_type) {
-        case OP_TYPE_PUSH: {
+        case OP_TYPE_PUSH:
+        case OP_TYPE_POP: {
             switch (inst->mem_seg_type) {
                 case MEM_SEG_TYPE_LCL: {
-                    fprintf(f, "// PUSH LCL BEGIN\n");
-
                     fprintf(f, "@LCL\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "A=D+A\n");
-                    fprintf(f, "D=M\n");
+
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "A=D+A\n");
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=D+A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_ARG: {
-                    fprintf(f, "// PUSH ARG BEGIN\n");
-
                     fprintf(f, "@ARG\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "A=D+A\n");
-                    fprintf(f, "D=M\n");
+
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "A=D+A\n");
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=D+A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_THIS: {
-                    fprintf(f, "// PUSH THIS BEGIN\n");
-
                     fprintf(f, "@THIS\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "A=D+A\n");
-                    fprintf(f, "D=M\n");
+
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "A=D+A\n");
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=D+A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_THAT: {
-                    fprintf(f, "// PUSH THAT BEGIN\n");
-
                     fprintf(f, "@THAT\n");
                     fprintf(f, "D=M\n");
                     fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "A=D+A\n");
-                    fprintf(f, "D=M\n");
+
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "A=D+A\n");
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=D+A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_CONST: {
-                    fprintf(f, "// PUSH CONST BEGIN\n");
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "@%li\n", inst->mem_addr);
+                        fprintf(f, "D=A\n");
 
-                    fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "D=A\n");
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_STATIC: {
-                    fprintf(f, "// PUSH STATIC BEGIN\n");
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        // @TODO: change for file name
+                        fprintf(f, "@Foo.%li\n", inst->mem_addr);
+                        fprintf(f, "D=M\n");
 
-                    // @TODO: change for file name
-                    fprintf(f, "@Foo.%li\n", inst->mem_addr);
-                    fprintf(f, "D=M\n");
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        // @TODO: change for file name
+                        fprintf(f, "@Foo.%li\n", inst->mem_addr);
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_TEMP: {
                     size_t mem_addr = inst->mem_addr + TEMP_BASE_ADDR;
                     assert(mem_addr <= TEMP_MAX_ADDR);
 
-                    fprintf(f, "// PUSH TEMP BEGIN\n");
-
                     fprintf(f, "@%li\n", mem_addr);
-                    fprintf(f, "D=M\n");
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_POINTER: {
                     assert(inst->mem_addr == 0 || inst->mem_addr == 1);
+
                     char *mem_addr = NULL;
                     if (inst->mem_addr == 1) {
                         mem_addr = "THAT";
@@ -112,124 +219,31 @@ void translator_translate_inst(Instruction *inst, FILE *f)
                         mem_addr = "THIS";
                     }
 
-                    fprintf(f, "// PUSH POINTER BEGIN\n");
-
                     fprintf(f, "@%s\n", mem_addr);
-                    fprintf(f, "D=M\n");
+                    if (inst->op_type == OP_TYPE_PUSH) {
+                        fprintf(f, "D=M\n");
+
+                        jump_to_stack_pointer(f);
+                        fprintf(f, "M=D\n");
+                        inc_stack_pointer(f);
+                    } else {
+                        fprintf(f, "D=A\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "M=D\n");
+
+                        dec_stack_pointer(f);
+                        jump_to_stack_pointer(f);
+
+                        fprintf(f, "D=M\n");
+                        fprintf(f, "@R15\n");
+                        fprintf(f, "A=M\n");
+
+                        fprintf(f, "M=D\n");
+                    }
                 } break;
 
                 case MEM_SEG_TYPE_UNINIT: assert(0);
             }
-
-            jump_to_stack_pointer(f);
-            fprintf(f, "M=D\n");
-            inc_stack_pointer(f);
-
-            fprintf(f, "// PUSH END\n");
-            fprintf(f, "\n");
-        } break;
-
-        case OP_TYPE_POP: {
-            switch (inst->mem_seg_type) {
-                case MEM_SEG_TYPE_LCL: {
-                    fprintf(f, "// POP LCL BEGIN\n");
-
-                    fprintf(f, "@LCL\n");
-                    fprintf(f, "D=M\n");
-                    fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "D=D+A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_ARG: {
-                    fprintf(f, "// POP ARG BEGIN\n");
-
-                    fprintf(f, "@ARG\n");
-                    fprintf(f, "D=M\n");
-                    fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "D=D+A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_THIS: {
-                    fprintf(f, "// POP THIS BEGIN\n");
-
-                    fprintf(f, "@THIS\n");
-                    fprintf(f, "D=M\n");
-                    fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "D=D+A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_THAT: {
-                    fprintf(f, "// POP THAT BEGIN\n");
-
-                    fprintf(f, "@THAT\n");
-                    fprintf(f, "D=M\n");
-                    fprintf(f, "@%li\n", inst->mem_addr);
-                    fprintf(f, "D=D+A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_STATIC: {
-                    fprintf(f, "// POP STATIC BEGIN\n");
-                } break;
-
-                case MEM_SEG_TYPE_TEMP: {
-                    size_t mem_addr = inst->mem_addr + TEMP_BASE_ADDR;
-                    assert(mem_addr <= TEMP_MAX_ADDR);
-
-                    fprintf(f, "// POP TEMP BEGIN\n");
-
-                    fprintf(f, "@%li\n", mem_addr);
-                    fprintf(f, "D=A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_POINTER: {
-                    assert(inst->mem_addr == 0 || inst->mem_addr == 1);
-                    char *mem_addr = NULL;
-                    if (inst->mem_addr == 1) {
-                        mem_addr = "THAT";
-                    } else {
-                        mem_addr = "THIS";
-                    }
-
-                    fprintf(f, "// POP POINTER BEGIN\n");
-
-                    fprintf(f, "@%s\n", mem_addr);
-                    fprintf(f, "D=A\n");
-                    fprintf(f, "@R15\n");
-                    fprintf(f, "M=D\n");
-                } break;
-
-                case MEM_SEG_TYPE_CONST:
-                case MEM_SEG_TYPE_UNINIT:
-                    assert(0);
-            }
-
-            dec_stack_pointer(f);
-            jump_to_stack_pointer(f);
-
-            if (inst->mem_seg_type == MEM_SEG_TYPE_STATIC) {
-                fprintf(f, "D=M\n");
-                // @TODO: change for file name
-                fprintf(f, "@Foo.%li\n", inst->mem_addr);
-            } else {
-                fprintf(f, "D=M\n");
-                fprintf(f, "@R15\n");
-                fprintf(f, "A=M\n");
-            }
-
-            fprintf(f, "M=D\n");
-
-            fprintf(f, "// POP END\n");
-            fprintf(f, "\n");
         } break;
 
         case OP_TYPE_ADD: {
