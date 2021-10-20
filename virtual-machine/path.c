@@ -1,5 +1,4 @@
 #include <string.h>
-#include <assert.h>
 
 #define PATH_SEP '/'
 

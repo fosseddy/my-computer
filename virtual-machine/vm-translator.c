@@ -1,14 +1,9 @@
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
-#include <stdlib.h>
 #include "parser.h"
 #include "translator.h"
 #include "path.h"
 
 #define OUTPUT_EXT ".asm"
-
-void create_out_file_from_in_file(const char *in_file, char *out_file);
 
 int main (int argc, char **argv)
 {
