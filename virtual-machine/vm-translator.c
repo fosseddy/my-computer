@@ -15,9 +15,9 @@ int main (int argc, char **argv)
     assert(argc > 1);
 
     const char *in_file = argv[1];
-    const char out_file[256];
-    path_get_file_name((char *) out_file, in_file);
-    path_concat_ext((char *) out_file, OUTPUT_EXT);
+    char out_file[256];
+    path_get_file_name(out_file, in_file);
+    path_concat_ext(out_file, OUTPUT_EXT);
 
     Parser p = make_parser(in_file);
     Translator t = make_translator(out_file);
