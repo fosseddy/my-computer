@@ -34,8 +34,8 @@ static void translate_push_pop_for(char *mem_seg, Instruction *inst, FILE *f)
 {
     fprintf(f, "@%s\n", mem_seg);
     fprintf(f, "D=M\n");
-    fprintf(f, "@%li\n", inst->mem_addr);
-    if (inst->op_type == OP_TYPE_PUSH) {
+    fprintf(f, "@%li\n", inst->mem_offset);
+    if (inst->op_kind == OP_KIND_PUSH) {
         fprintf(f, "A=D+A\n");
         fprintf(f, "D=M\n");
 
@@ -84,29 +84,29 @@ void free_translator(Translator *t)
 
 void translator_translate_inst(Translator *t, Instruction *inst)
 {
-    switch (inst->op_type) {
-        case OP_TYPE_PUSH:
-        case OP_TYPE_POP: {
-            switch (inst->mem_seg_type) {
-                case MEM_SEG_TYPE_LCL: {
+    switch (inst->op_kind) {
+        case OP_KIND_PUSH:
+        case OP_KIND_POP: {
+            switch (inst->mem_seg_kind) {
+                case MEM_SEG_KIND_LCL: {
                     translate_push_pop_for("LCL", inst, t->f);
                 } break;
 
-                case MEM_SEG_TYPE_ARG: {
+                case MEM_SEG_KIND_ARG: {
                     translate_push_pop_for("ARG", inst, t->f);
                 } break;
 
-                case MEM_SEG_TYPE_THIS: {
+                case MEM_SEG_KIND_THIS: {
                     translate_push_pop_for("THIS", inst, t->f);
                 } break;
 
-                case MEM_SEG_TYPE_THAT: {
+                case MEM_SEG_KIND_THAT: {
                     translate_push_pop_for("THAT", inst, t->f);
                 } break;
 
-                case MEM_SEG_TYPE_CONST: {
-                    if (inst->op_type == OP_TYPE_PUSH) {
-                        fprintf(t->f, "@%li\n", inst->mem_addr);
+                case MEM_SEG_KIND_CONST: {
+                    if (inst->op_kind == OP_KIND_PUSH) {
+                        fprintf(t->f, "@%li\n", inst->mem_offset);
                         fprintf(t->f, "D=A\n");
 
                         jump_to_stack_pointer(t->f);
@@ -118,10 +118,10 @@ void translator_translate_inst(Translator *t, Instruction *inst)
                     }
                 } break;
 
-                case MEM_SEG_TYPE_STATIC: {
-                    if (inst->op_type == OP_TYPE_PUSH) {
+                case MEM_SEG_KIND_STATIC: {
+                    if (inst->op_kind == OP_KIND_PUSH) {
                         // @TODO: change for file name
-                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_addr);
+                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
                         fprintf(t->f, "D=M\n");
 
                         jump_to_stack_pointer(t->f);
@@ -135,17 +135,17 @@ void translator_translate_inst(Translator *t, Instruction *inst)
                         fprintf(t->f, "D=M\n");
 
                         // @TODO: change for file name
-                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_addr);
+                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
                         fprintf(t->f, "M=D\n");
                     }
                 } break;
 
-                case MEM_SEG_TYPE_TEMP: {
-                    size_t mem_addr = inst->mem_addr + TEMP_BASE_ADDR;
+                case MEM_SEG_KIND_TEMP: {
+                    size_t mem_addr = inst->mem_offset + TEMP_BASE_ADDR;
                     assert(mem_addr <= TEMP_MAX_ADDR);
 
                     fprintf(t->f, "@%li\n", mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
+                    if (inst->op_kind == OP_KIND_PUSH) {
                         fprintf(t->f, "D=M\n");
 
                         jump_to_stack_pointer(t->f);
@@ -169,18 +169,18 @@ void translator_translate_inst(Translator *t, Instruction *inst)
                     }
                 } break;
 
-                case MEM_SEG_TYPE_POINTER: {
-                    assert(inst->mem_addr == 0 || inst->mem_addr == 1);
+                case MEM_SEG_KIND_POINTER: {
+                    assert(inst->mem_offset == 0 || inst->mem_offset == 1);
 
                     char *mem_addr = NULL;
-                    if (inst->mem_addr == 1) {
+                    if (inst->mem_offset == 1) {
                         mem_addr = "THAT";
                     } else {
                         mem_addr = "THIS";
                     }
 
                     fprintf(t->f, "@%s\n", mem_addr);
-                    if (inst->op_type == OP_TYPE_PUSH) {
+                    if (inst->op_kind == OP_KIND_PUSH) {
                         fprintf(t->f, "D=M\n");
 
                         jump_to_stack_pointer(t->f);
@@ -203,12 +203,18 @@ void translator_translate_inst(Translator *t, Instruction *inst)
                         fprintf(t->f, "M=D\n");
                     }
                 } break;
-
-                case MEM_SEG_TYPE_UNINIT: assert(0);
             }
         } break;
 
-        case OP_TYPE_ADD: {
+        case OP_KIND_LABEL:
+        case OP_KIND_GOTO:
+        case OP_KIND_IF:
+        case OP_KIND_FUNC:
+        case OP_KIND_CALL:
+        case OP_KIND_RET:
+            break;
+
+        case OP_KIND_ADD: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
             dec_stack_pointer(t->f);
@@ -216,7 +222,7 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             fprintf(t->f, "M=D+M\n");
         } break;
 
-        case OP_TYPE_SUB: {
+        case OP_KIND_SUB: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
             dec_stack_pointer(t->f);
@@ -224,7 +230,7 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             fprintf(t->f, "M=M-D\n");
         } break;
 
-        case OP_TYPE_EQ: {
+        case OP_KIND_EQ: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
 
@@ -244,7 +250,7 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             t->unique_counter++;
         } break;
 
-        case OP_TYPE_LT: {
+        case OP_KIND_LT: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
 
@@ -264,7 +270,7 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             t->unique_counter++;
         } break;
 
-        case OP_TYPE_GT: {
+        case OP_KIND_GT: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
 
@@ -284,12 +290,12 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             t->unique_counter++;
         } break;
 
-        case OP_TYPE_NEG: {
+        case OP_KIND_NEG: {
             jump_to_top_value(t->f);
             fprintf(t->f, "M=-M\n");
         } break;
 
-        case OP_TYPE_AND: {
+        case OP_KIND_AND: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
 
@@ -299,7 +305,7 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             fprintf(t->f, "M=D&M\n");
         } break;
 
-        case OP_TYPE_OR: {
+        case OP_KIND_OR: {
             jump_to_top_value(t->f);
             fprintf(t->f, "D=M\n");
 
@@ -309,11 +315,9 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             fprintf(t->f, "M=D|M\n");
         } break;
 
-        case OP_TYPE_NOT: {
+        case OP_KIND_NOT: {
             jump_to_top_value(t->f);
             fprintf(t->f, "M=!M\n");
         } break;
-
-        case OP_TYPE_UNINIT: assert(0);
     }
 }
