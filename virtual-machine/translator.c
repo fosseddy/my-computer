@@ -30,7 +30,7 @@ static void inc_stack_pointer(FILE *f)
     fprintf(f, "M=M+1\n");
 }
 
-static void translate_push_pop_for(char *mem_seg, Instruction *inst, FILE *f)
+static void translate_predefined_push_pop(char *mem_seg, Instruction *inst, FILE *f)
 {
     fprintf(f, "@%s\n", mem_seg);
     fprintf(f, "D=M\n");
@@ -58,6 +58,134 @@ static void translate_push_pop_for(char *mem_seg, Instruction *inst, FILE *f)
         fprintf(f, "A=M\n");
         fprintf(f, "M=D\n");
     }
+}
+
+static void translate_const_push_pop(Instruction *inst, FILE *f)
+{
+    if (inst->op_kind == OP_KIND_PUSH) {
+        fprintf(f, "@%li\n", inst->mem_offset);
+        fprintf(f, "D=A\n");
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "M=D\n");
+
+        inc_stack_pointer(f);
+    } else {
+        assert(0 && "Can not use pop on constant segment");
+    }
+}
+
+static void translate_static_push_pop(Instruction *inst, Translator *t)
+{
+    if (inst->op_kind == OP_KIND_PUSH) {
+        // @TODO: change for file name
+        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
+        fprintf(t->f, "D=M\n");
+
+        jump_to_stack_pointer(t->f);
+        fprintf(t->f, "M=D\n");
+
+        inc_stack_pointer(t->f);
+    } else {
+        dec_stack_pointer(t->f);
+
+        jump_to_stack_pointer(t->f);
+        fprintf(t->f, "D=M\n");
+
+        // @TODO: change for file name
+        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
+        fprintf(t->f, "M=D\n");
+    }
+}
+
+
+static void translate_temp_push_pop(Instruction *inst, FILE *f)
+{
+    size_t mem_addr = inst->mem_offset + TEMP_BASE_ADDR;
+    assert(mem_addr <= TEMP_MAX_ADDR);
+
+    fprintf(f, "@%li\n", mem_addr);
+    if (inst->op_kind == OP_KIND_PUSH) {
+        fprintf(f, "D=M\n");
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "M=D\n");
+
+        inc_stack_pointer(f);
+    } else {
+        fprintf(f, "D=A\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "M=D\n");
+
+        dec_stack_pointer(f);
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "D=M\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "A=M\n");
+        fprintf(f, "M=D\n");
+    }
+}
+
+static void translate_pointer_push_pop(Instruction *inst, FILE *f)
+{
+    assert(inst->mem_offset == 0 || inst->mem_offset == 1);
+
+    char *mem_addr = NULL;
+    if (inst->mem_offset == 1) {
+        mem_addr = "THAT";
+    } else {
+        mem_addr = "THIS";
+    }
+
+    fprintf(f, "@%s\n", mem_addr);
+    if (inst->op_kind == OP_KIND_PUSH) {
+        fprintf(f, "D=M\n");
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "M=D\n");
+
+        inc_stack_pointer(f);
+    } else {
+        fprintf(f, "D=A\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "M=D\n");
+
+        dec_stack_pointer(f);
+
+        jump_to_stack_pointer(f);
+        fprintf(f, "D=M\n");
+
+        fprintf(f, "@R15\n");
+        fprintf(f, "A=M\n");
+        fprintf(f, "M=D\n");
+    }
+}
+
+static void translate_label(char *label, FILE *f)
+{
+    fprintf(f, "(%s)\n", label);
+}
+
+static void translate_goto(char *label, FILE *f)
+{
+    fprintf(f, "@%s\n", label);
+    fprintf(f, "0;JMP\n");
+}
+
+static void translate_if(char *label, FILE *f)
+{
+
+    jump_to_top_value(f);
+    fprintf(f, "D=M\n");
+
+    dec_stack_pointer(f);
+
+    fprintf(f, "@%s\n", label);
+    fprintf(f, "D;JNE\n");
 }
 
 Translator make_translator(const char *file_path)
@@ -88,127 +216,55 @@ void translator_translate_inst(Translator *t, Instruction *inst)
         case OP_KIND_PUSH:
         case OP_KIND_POP: {
             switch (inst->mem_seg_kind) {
-                case MEM_SEG_KIND_LCL: {
-                    translate_push_pop_for("LCL", inst, t->f);
-                } break;
+                case MEM_SEG_KIND_LCL:
+                    translate_predefined_push_pop("LCL", inst, t->f);
+                    break;
 
-                case MEM_SEG_KIND_ARG: {
-                    translate_push_pop_for("ARG", inst, t->f);
-                } break;
+                case MEM_SEG_KIND_ARG:
+                    translate_predefined_push_pop("ARG", inst, t->f);
+                    break;
 
-                case MEM_SEG_KIND_THIS: {
-                    translate_push_pop_for("THIS", inst, t->f);
-                } break;
+                case MEM_SEG_KIND_THIS:
+                    translate_predefined_push_pop("THIS", inst, t->f);
+                    break;
 
-                case MEM_SEG_KIND_THAT: {
-                    translate_push_pop_for("THAT", inst, t->f);
-                } break;
+                case MEM_SEG_KIND_THAT:
+                    translate_predefined_push_pop("THAT", inst, t->f);
+                    break;
 
-                case MEM_SEG_KIND_CONST: {
-                    if (inst->op_kind == OP_KIND_PUSH) {
-                        fprintf(t->f, "@%li\n", inst->mem_offset);
-                        fprintf(t->f, "D=A\n");
+                case MEM_SEG_KIND_CONST:
+                    translate_const_push_pop(inst, t->f);
+                    break;
 
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
+                case MEM_SEG_KIND_STATIC:
+                    translate_static_push_pop(inst, t);
+                    break;
 
-                        inc_stack_pointer(t->f);
-                    } else {
-                        assert(0);
-                    }
-                } break;
+                case MEM_SEG_KIND_TEMP:
+                    translate_temp_push_pop(inst, t->f);
+                    break;
 
-                case MEM_SEG_KIND_STATIC: {
-                    if (inst->op_kind == OP_KIND_PUSH) {
-                        // @TODO: change for file name
-                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
-                        fprintf(t->f, "D=M\n");
+                case MEM_SEG_KIND_POINTER:
+                    translate_pointer_push_pop(inst, t->f);
+                    break;
 
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        // @TODO: change for file name
-                        fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
-                        fprintf(t->f, "M=D\n");
-                    }
-                } break;
-
-                case MEM_SEG_KIND_TEMP: {
-                    size_t mem_addr = inst->mem_offset + TEMP_BASE_ADDR;
-                    assert(mem_addr <= TEMP_MAX_ADDR);
-
-                    fprintf(t->f, "@%li\n", mem_addr);
-                    if (inst->op_kind == OP_KIND_PUSH) {
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
-                } break;
-
-                case MEM_SEG_KIND_POINTER: {
-                    assert(inst->mem_offset == 0 || inst->mem_offset == 1);
-
-                    char *mem_addr = NULL;
-                    if (inst->mem_offset == 1) {
-                        mem_addr = "THAT";
-                    } else {
-                        mem_addr = "THIS";
-                    }
-
-                    fprintf(t->f, "@%s\n", mem_addr);
-                    if (inst->op_kind == OP_KIND_PUSH) {
-                        fprintf(t->f, "D=M\n");
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "M=D\n");
-
-                        inc_stack_pointer(t->f);
-                    } else {
-                        fprintf(t->f, "D=A\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "M=D\n");
-
-                        dec_stack_pointer(t->f);
-
-                        jump_to_stack_pointer(t->f);
-                        fprintf(t->f, "D=M\n");
-
-                        fprintf(t->f, "@R15\n");
-                        fprintf(t->f, "A=M\n");
-                        fprintf(t->f, "M=D\n");
-                    }
-                } break;
+                default:
+                    assert(0 && "Unreachable");
             }
         } break;
 
         case OP_KIND_LABEL:
+            translate_label(inst->label, t->f);
+            break;
+
         case OP_KIND_GOTO:
+            translate_goto(inst->label, t->f);
+            break;
+
         case OP_KIND_IF:
+            translate_if(inst->label, t->f);
+            break;
+
         case OP_KIND_FUNC:
         case OP_KIND_CALL:
         case OP_KIND_RET:
