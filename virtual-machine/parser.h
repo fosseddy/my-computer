@@ -11,41 +11,52 @@ typedef struct {
 } Parser;
 
 typedef enum {
-    OP_TYPE_UNINIT = 0,
+    OP_KIND_PUSH,
+    OP_KIND_POP,
 
-    OP_TYPE_PUSH,
-    OP_TYPE_POP,
+    OP_KIND_LABEL,
+    OP_KIND_GOTO,
+    OP_KIND_IF,
 
-    OP_TYPE_ADD,
-    OP_TYPE_SUB,
-    OP_TYPE_NEG,
-    OP_TYPE_EQ,
-    OP_TYPE_GT,
-    OP_TYPE_LT,
-    OP_TYPE_AND,
-    OP_TYPE_OR,
-    OP_TYPE_NOT
-} Op_Type;
+    OP_KIND_FUNC,
+    OP_KIND_CALL,
+    OP_KIND_RET,
+
+    OP_KIND_ADD,
+    OP_KIND_SUB,
+    OP_KIND_NEG,
+    OP_KIND_EQ,
+    OP_KIND_GT,
+    OP_KIND_LT,
+    OP_KIND_AND,
+    OP_KIND_OR,
+    OP_KIND_NOT
+} Op_Kind;
 
 typedef enum {
-    MEM_SEG_TYPE_UNINIT = 0,
+    MEM_SEG_KIND_LCL,
+    MEM_SEG_KIND_ARG,
+    MEM_SEG_KIND_THIS,
+    MEM_SEG_KIND_THAT,
 
-    MEM_SEG_TYPE_LCL,
-    MEM_SEG_TYPE_ARG,
-    MEM_SEG_TYPE_THIS,
-    MEM_SEG_TYPE_THAT,
-
-    MEM_SEG_TYPE_CONST,
-    MEM_SEG_TYPE_STATIC,
-    MEM_SEG_TYPE_TEMP,
-    MEM_SEG_TYPE_POINTER
-} Mem_Seg_Type;
+    MEM_SEG_KIND_CONST,
+    MEM_SEG_KIND_STATIC,
+    MEM_SEG_KIND_TEMP,
+    MEM_SEG_KIND_POINTER
+} Mem_Seg_Kind;
 
 typedef struct {
-    Op_Type op_type;
-    Mem_Seg_Type mem_seg_type;
-    size_t mem_addr;
+    Op_Kind op_kind;
+
+    Mem_Seg_Kind mem_seg_kind;
+    size_t mem_offset;
+
+    char *label;
+
+    char *func_name;
+    size_t func_args_num;
 } Instruction;
+
 
 Parser make_parser(const char *file_path);
 bool parser_peek_line(Parser *p);

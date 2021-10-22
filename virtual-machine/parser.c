@@ -62,57 +62,90 @@ Instruction parser_parse_instruction(Parser *p)
     assert(op != NULL);
 
     if (strcmp(op, "push") == 0) {
-        inst.op_type = OP_TYPE_PUSH;
+        inst.op_kind = OP_KIND_PUSH;
     } else if (strcmp(op, "pop") == 0) {
-        inst.op_type = OP_TYPE_POP;
+        inst.op_kind = OP_KIND_POP;
     } else if (strcmp(op, "add") == 0) {
-        inst.op_type = OP_TYPE_ADD;
+        inst.op_kind = OP_KIND_ADD;
     } else if (strcmp(op, "sub") == 0) {
-        inst.op_type = OP_TYPE_SUB;
+        inst.op_kind = OP_KIND_SUB;
     } else if (strcmp(op, "eq") == 0) {
-        inst.op_type = OP_TYPE_EQ;
+        inst.op_kind = OP_KIND_EQ;
     } else if (strcmp(op, "lt") == 0) {
-        inst.op_type = OP_TYPE_LT;
+        inst.op_kind = OP_KIND_LT;
     } else if (strcmp(op, "gt") == 0) {
-        inst.op_type = OP_TYPE_GT;
+        inst.op_kind = OP_KIND_GT;
     } else if (strcmp(op, "and") == 0) {
-        inst.op_type = OP_TYPE_AND;
+        inst.op_kind = OP_KIND_AND;
     } else if (strcmp(op, "or") == 0) {
-        inst.op_type = OP_TYPE_OR;
+        inst.op_kind = OP_KIND_OR;
     } else if (strcmp(op, "not") == 0) {
-        inst.op_type = OP_TYPE_NOT;
+        inst.op_kind = OP_KIND_NOT;
     } else if (strcmp(op, "neg") == 0) {
-        inst.op_type = OP_TYPE_NEG;
+        inst.op_kind = OP_KIND_NEG;
+    } else if (strcmp(op, "label") == 0) {
+        inst.op_kind = OP_KIND_LABEL;
+    } else if (strcmp(op, "goto") == 0) {
+        inst.op_kind = OP_KIND_GOTO;
+    } else if (strcmp(op, "if-goto") == 0) {
+        inst.op_kind = OP_KIND_IF;
+    } else if (strcmp(op, "function") == 0) {
+        inst.op_kind = OP_KIND_FUNC;
+    } else if (strcmp(op, "call") == 0) {
+        inst.op_kind = OP_KIND_CALL;
+    } else if (strcmp(op, "return") == 0) {
+        inst.op_kind = OP_KIND_RET;
     } else {
-        assert(0);
+        assert(0 && "Unreachable");
     }
 
-    char *mem_seg = strtok(NULL, " ");
-    if (mem_seg == NULL) return inst;
+    char *arg_1 = strtok(NULL, " ");
+    if (arg_1 == NULL) return inst;
 
-    if (strcmp(mem_seg, "local") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_LCL;
-    } else if (strcmp(mem_seg, "argument") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_ARG;
-    } else if (strcmp(mem_seg, "this") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_THIS;
-    } else if (strcmp(mem_seg, "that") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_THAT;
-    } else if (strcmp(mem_seg, "constant") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_CONST;
-    } else if (strcmp(mem_seg, "static") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_STATIC;
-    } else if (strcmp(mem_seg, "pointer") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_POINTER;
-    } else if (strcmp(mem_seg, "temp") == 0) {
-        inst.mem_seg_type = MEM_SEG_TYPE_TEMP;
-    } else {
-        assert(0);
+    char *arg_2 = strtok(NULL, " ");
+
+    switch (inst.op_kind) {
+        case OP_KIND_PUSH:
+        case OP_KIND_POP: {
+            if (strcmp(arg_1, "local") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_LCL;
+            } else if (strcmp(arg_1, "argument") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_ARG;
+            } else if (strcmp(arg_1, "this") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_THIS;
+            } else if (strcmp(arg_1, "that") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_THAT;
+            } else if (strcmp(arg_1, "constant") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_CONST;
+            } else if (strcmp(arg_1, "static") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_STATIC;
+            } else if (strcmp(arg_1, "pointer") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_POINTER;
+            } else if (strcmp(arg_1, "temp") == 0) {
+                inst.mem_seg_kind = MEM_SEG_KIND_TEMP;
+            } else {
+                assert(0 && "Unreachable");
+            }
+
+            assert(arg_2 != NULL);
+            inst.mem_offset = atoi(arg_2);
+        } break;
+
+        case OP_KIND_FUNC:
+        case OP_KIND_CALL: {
+            inst.func_name = arg_1;
+            assert(arg_2 != NULL);
+            inst.func_args_num = atoi(arg_2);
+        } break;
+
+        case OP_KIND_LABEL:
+        case OP_KIND_GOTO:
+        case OP_KIND_IF: {
+            inst.label = arg_1;
+        } break;
+
+        default: break;
     }
-
-    char *mem_addr = strtok(NULL, " ");
-    if (mem_addr == NULL) return inst;
-    inst.mem_addr = atoi(mem_addr);
 
     return inst;
 }
