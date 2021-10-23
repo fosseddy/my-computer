@@ -19,6 +19,8 @@ int main (int argc, char **argv)
 
     while (parser_peek_line(&p)) {
         Instruction inst = parser_parse_instruction(&p);
+
+        printf("----------------------------------------\n");
         printf("op_kind: %i\n", inst.op_kind);
         printf("mem_seg_kind: %i\n", inst.mem_seg_kind);
         printf("mem_offset: %li\n", inst.mem_offset);
