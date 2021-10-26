@@ -14,11 +14,11 @@ int main (int argc, char **argv)
     path_get_file_name(out_file, in_file);
     path_concat_ext(out_file, OUTPUT_EXT);
 
-    Parser p = make_parser(in_file);
-    Translator t = make_translator(out_file);
+    struct Parser p = make_parser(in_file);
+    struct Translator t = make_translator(out_file);
 
     while (parser_peek_line(&p)) {
-        Instruction inst = parser_parse_instruction(&p);
+        struct Instruction inst = parser_parse_instruction(&p);
 
         printf("----------------------------------------\n");
         printf("op_kind: %i\n", inst.op_kind);

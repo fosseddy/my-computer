@@ -10,19 +10,19 @@
 static void trim_left(char *s);
 static void trim_right(char *s);
 
-Parser make_parser(const char *file_path)
+struct Parser make_parser(const char *file_path)
 {
     FILE *f = fopen(file_path, "r");
     assert(f != NULL);
 
-    return (Parser) {
+    return (struct Parser) {
         .file = f,
         .line_size = 0,
         .line = NULL
     };
 }
 
-bool parser_peek_line(Parser *p)
+bool parser_peek_line(struct Parser *p)
 {
     for (;;) {
         ssize_t read = getline(&p->line, &p->line_size, p->file);
@@ -54,9 +54,9 @@ bool parser_peek_line(Parser *p)
     }
 }
 
-Instruction parser_parse_instruction(Parser *p)
+struct Instruction parser_parse_instruction(struct Parser *p)
 {
-    Instruction inst = {0};
+    struct Instruction inst = {0};
 
     char *op= strtok(p->line, " ");
     assert(op != NULL);

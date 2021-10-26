@@ -30,7 +30,7 @@ static void inc_stack_pointer(FILE *f)
     fprintf(f, "M=M+1\n");
 }
 
-static void translate_predefined_push_pop(char *mem_seg, Instruction *inst, FILE *f)
+static void translate_predefined_push_pop(char *mem_seg, struct Instruction *inst, FILE *f)
 {
     fprintf(f, "@%s\n", mem_seg);
     fprintf(f, "D=M\n");
@@ -60,7 +60,7 @@ static void translate_predefined_push_pop(char *mem_seg, Instruction *inst, FILE
     }
 }
 
-static void translate_const_push_pop(Instruction *inst, FILE *f)
+static void translate_const_push_pop(struct Instruction *inst, FILE *f)
 {
     if (inst->op_kind == OP_KIND_PUSH) {
         fprintf(f, "@%li\n", inst->mem_offset);
@@ -75,7 +75,7 @@ static void translate_const_push_pop(Instruction *inst, FILE *f)
     }
 }
 
-static void translate_static_push_pop(Instruction *inst, Translator *t)
+static void translate_static_push_pop(struct Instruction *inst, struct Translator *t)
 {
     if (inst->op_kind == OP_KIND_PUSH) {
         // @TODO: change for file name
@@ -99,7 +99,7 @@ static void translate_static_push_pop(Instruction *inst, Translator *t)
 }
 
 
-static void translate_temp_push_pop(Instruction *inst, FILE *f)
+static void translate_temp_push_pop(struct Instruction *inst, FILE *f)
 {
     size_t mem_addr = inst->mem_offset + TEMP_BASE_ADDR;
     assert(mem_addr <= TEMP_MAX_ADDR);
@@ -129,7 +129,7 @@ static void translate_temp_push_pop(Instruction *inst, FILE *f)
     }
 }
 
-static void translate_pointer_push_pop(Instruction *inst, FILE *f)
+static void translate_pointer_push_pop(struct Instruction *inst, FILE *f)
 {
     assert(inst->mem_offset == 0 || inst->mem_offset == 1);
 
@@ -188,12 +188,28 @@ static void translate_if(char *label, FILE *f)
     fprintf(f, "D;JNE\n");
 }
 
-Translator make_translator(const char *file_path)
+//static void translate_call(struct Instruction *t, FILE *f)
+//{
+//    fprintf(f, "@%li\n", t->func_args_num);
+//    fprintf(f, "D=A\n");
+//
+//    jump_to_stack_pointer(f);
+//    // Save caller's stack frame
+//
+//    // set ARG
+//    fprintf(f, "D=A-D\n");
+//    fprintf(f, "@ARG\n");
+//    fprintf(f, "M=D\n");
+//
+//    // Jumps to function lable
+//}
+
+struct Translator make_translator(const char *file_path)
 {
     FILE *file = fopen(file_path, "w");
     assert (file != NULL);
 
-    Translator t = {
+    struct Translator t = {
         .f = file,
         .unique_counter = 0
     };
@@ -205,12 +221,12 @@ Translator make_translator(const char *file_path)
     return t;
 }
 
-void free_translator(Translator *t)
+void free_translator(struct Translator *t)
 {
     fclose(t->f);
 }
 
-void translator_translate_inst(Translator *t, Instruction *inst)
+void translator_translate_inst(struct Translator *t, struct Instruction *inst)
 {
     switch (inst->op_kind) {
         case OP_KIND_PUSH:
@@ -266,7 +282,12 @@ void translator_translate_inst(Translator *t, Instruction *inst)
             break;
 
         case OP_KIND_FUNC:
+            break;
+
         case OP_KIND_CALL:
+//            translate_call();
+            break;
+
         case OP_KIND_RET:
             break;
 

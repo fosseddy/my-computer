@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-typedef struct {
+struct Parser {
     FILE *file;
     char *line;
     size_t line_size;
-} Parser;
+};
 
-typedef enum {
+enum Op_Kind {
     OP_KIND_PUSH,
     OP_KIND_POP,
 
@@ -31,9 +31,9 @@ typedef enum {
     OP_KIND_AND,
     OP_KIND_OR,
     OP_KIND_NOT
-} Op_Kind;
+};
 
-typedef enum {
+enum Mem_Seg_Kind {
     MEM_SEG_KIND_LCL,
     MEM_SEG_KIND_ARG,
     MEM_SEG_KIND_THIS,
@@ -43,23 +43,23 @@ typedef enum {
     MEM_SEG_KIND_STATIC,
     MEM_SEG_KIND_TEMP,
     MEM_SEG_KIND_POINTER
-} Mem_Seg_Kind;
+};
 
-typedef struct {
-    Op_Kind op_kind;
+struct Instruction {
+    enum Op_Kind op_kind;
 
-    Mem_Seg_Kind mem_seg_kind;
+    enum Mem_Seg_Kind mem_seg_kind;
     size_t mem_offset;
 
     char *label;
 
     char *func_name;
     size_t func_args_num;
-} Instruction;
+};
 
 
-Parser make_parser(const char *file_path);
-bool parser_peek_line(Parser *p);
-Instruction parser_parse_instruction(Parser *p);
+struct Parser make_parser(const char *file_path);
+bool parser_peek_line(struct Parser *p);
+struct Instruction parser_parse_instruction(struct Parser *p);
 
 #endif
