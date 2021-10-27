@@ -30,8 +30,9 @@ static void inc_stack_pointer(FILE *f)
     fprintf(f, "M=M+1\n");
 }
 
-static void
-translate_predefined_push_pop(char *mem_seg, struct Instruction *inst, FILE *f)
+static void translate_predefined_push_pop(char *mem_seg,
+                                          struct Instruction *inst,
+                                          FILE *f)
 {
     fprintf(f, "@%s\n", mem_seg);
     fprintf(f, "D=M\n");
@@ -76,8 +77,8 @@ static void translate_const_push_pop(struct Instruction *inst, FILE *f)
     }
 }
 
-static void
-translate_static_push_pop(struct Instruction *inst, struct Translator *t)
+static void translate_static_push_pop(struct Instruction *inst,
+                                      struct Translator *t)
 {
     if (inst->op_kind == OP_KIND_PUSH) {
         // @TODO: change for file name
@@ -99,7 +100,6 @@ translate_static_push_pop(struct Instruction *inst, struct Translator *t)
         fprintf(t->f, "M=D\n");
     }
 }
-
 
 static void translate_temp_push_pop(struct Instruction *inst, FILE *f)
 {
