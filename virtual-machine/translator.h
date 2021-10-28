@@ -2,6 +2,7 @@
 #define TRANSLATOR_H
 
 #include <stdio.h>
+
 #include "parser.h"
 
 struct Translator {
