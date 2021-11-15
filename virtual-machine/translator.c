@@ -191,21 +191,137 @@ static void translate_if(char *label, FILE *f)
     fprintf(f, "D;JNE\n");
 }
 
-//static void translate_call(struct Instruction *t, FILE *f)
-//{
-//    fprintf(f, "@%li\n", t->func_args_num);
-//    fprintf(f, "D=A\n");
-//
-//    jump_to_stack_pointer(f);
-//    // Save caller's stack frame
-//
-//    // set ARG
-//    fprintf(f, "D=A-D\n");
-//    fprintf(f, "@ARG\n");
-//    fprintf(f, "M=D\n");
-//
-//    // Jumps to function lable
-//}
+static void translate_call(struct Translator *t, struct Instruction *inst)
+{
+    // Save returnAddr
+    fprintf(t->f, "@ret.%li\n", t->unique_counter);
+    fprintf(t->f, "D=A\n");
+    jump_to_stack_pointer(t->f);
+    fprintf(t->f, "M=D\n");
+    inc_stack_pointer(t->f);
+
+    // Save caller's stack frame
+    fprintf(t->f, "@LCL\n");
+    fprintf(t->f, "D=M\n");
+    jump_to_stack_pointer(t->f);
+    fprintf(t->f, "M=D\n");
+    inc_stack_pointer(t->f);
+
+    fprintf(t->f, "@ARG\n");
+    fprintf(t->f, "D=M\n");
+    jump_to_stack_pointer(t->f);
+    fprintf(t->f, "M=D\n");
+    inc_stack_pointer(t->f);
+
+    fprintf(t->f, "@THIS\n");
+    fprintf(t->f, "D=M\n");
+    jump_to_stack_pointer(t->f);
+    fprintf(t->f, "M=D\n");
+    inc_stack_pointer(t->f);
+
+    fprintf(t->f, "@THAT\n");
+    fprintf(t->f, "D=M\n");
+    jump_to_stack_pointer(t->f);
+    fprintf(t->f, "M=D\n");
+    inc_stack_pointer(t->f);
+
+    // set ARG
+    fprintf(t->f, "@SP\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@5\n");
+    fprintf(t->f, "D=D-A\n");
+    fprintf(t->f, "@%li\n", inst->func_args_num);
+    fprintf(t->f, "D=D-A\n");
+    fprintf(t->f, "@ARG\n");
+    fprintf(t->f, "M=D\n");
+
+    // set LCL
+    fprintf(t->f, "@SP\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@LCL\n");
+    fprintf(t->f, "M=D\n");
+
+    // Jump to function lable
+    translate_goto(inst->func_name, t->f);
+
+    // Set return label
+    fprintf(t->f, "(ret.%li)\n", t->unique_counter);
+
+    t->unique_counter++;
+}
+
+static void translate_func(struct Translator *t, struct Instruction *inst)
+{
+    fprintf(t->f, "(%s)\n", inst->func_name);
+    for (size_t i = 0; i < inst->func_args_num; ++i) {
+        jump_to_stack_pointer(t->f);
+        fprintf(t->f, "M=0\n");
+        inc_stack_pointer(t->f);
+    }
+}
+
+static void translate_ret(struct Translator *t)
+{
+    // save end frame
+    fprintf(t->f, "@LCL\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "M=D\n");
+
+    // save ret address
+    fprintf(t->f, "@5\n");
+    fprintf(t->f, "D=A\n");
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "A=M-D\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@R14\n");
+    fprintf(t->f, "M=D\n");
+
+    // put return value to ARG
+    jump_to_top_value(t->f);
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@ARG\n");
+    fprintf(t->f, "A=M\n");
+    fprintf(t->f, "M=D\n");
+
+    // set SP to ARG
+    fprintf(t->f, "@ARG\n");
+    fprintf(t->f, "D=M+1\n");
+    fprintf(t->f, "@SP\n");
+    fprintf(t->f, "M=D\n");
+
+    // restore caller's stack frame
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "D=M-1\n");
+    fprintf(t->f, "@THAT\n");
+    fprintf(t->f, "M=D\n");
+
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@2\n");
+    fprintf(t->f, "D=M-A\n");
+    fprintf(t->f, "@THIS\n");
+    fprintf(t->f, "M=D\n");
+
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@3\n");
+    fprintf(t->f, "D=M-A\n");
+    fprintf(t->f, "@ARG\n");
+    fprintf(t->f, "M=D\n");
+
+    fprintf(t->f, "@R13\n");
+    fprintf(t->f, "D=M\n");
+    fprintf(t->f, "@4\n");
+    fprintf(t->f, "D=M-A\n");
+    fprintf(t->f, "@LCL\n");
+    fprintf(t->f, "M=D\n");
+
+    // jump to ret address
+    fprintf(t->f, "@R14\n");
+    fprintf(t->f, "A=M\n");
+    fprintf(t->f, "0;JMP\n");
+}
 
 struct Translator make_translator(const char *file_path)
 {
@@ -285,13 +401,15 @@ void translator_translate_inst(struct Translator *t, struct Instruction *inst)
             break;
 
         case OP_KIND_FUNC:
+            translate_func(t, inst);
             break;
 
         case OP_KIND_CALL:
-//            translate_call();
+            translate_call(t, inst);
             break;
 
         case OP_KIND_RET:
+            translate_ret(t);
             break;
 
         case OP_KIND_ADD: {
