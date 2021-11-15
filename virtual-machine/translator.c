@@ -82,7 +82,6 @@ static void translate_static_push_pop(struct Instruction *inst,
                                       struct Translator *t)
 {
     if (inst->op_kind == OP_KIND_PUSH) {
-        // @TODO: change for file name
         fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
         fprintf(t->f, "D=M\n");
 
@@ -192,7 +191,7 @@ static void translate_if(char *label, FILE *f)
 
 static void translate_call(struct Translator *t, struct Instruction *inst)
 {
-    // Save returnAddr
+    // Save return address
     fprintf(t->f, "@ret.%li\n", t->unique_counter);
     fprintf(t->f, "D=A\n");
     jump_to_stack_pointer(t->f);
@@ -322,8 +321,7 @@ static void translate_ret(struct Translator *t)
     fprintf(t->f, "0;JMP\n");
 }
 
-struct Translator make_translator(const char *file_path)
-{
+struct Translator make_translator(const char *file_path) {
     FILE *file = fopen(file_path, "w");
     assert (file != NULL);
 
@@ -332,9 +330,7 @@ struct Translator make_translator(const char *file_path)
         .unique_counter = 0
     };
 
-    char file_name[256];
-    path_get_file_name(file_name, file_path);
-    strcpy((char *) t.file_name, file_name);
+    path_get_file_name((char *) t.file_name, file_path);
 
     return t;
 }
