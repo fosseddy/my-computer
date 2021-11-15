@@ -181,7 +181,6 @@ static void translate_goto(char *label, FILE *f)
 
 static void translate_if(char *label, FILE *f)
 {
-
     jump_to_top_value(f);
     fprintf(f, "D=M\n");
 
