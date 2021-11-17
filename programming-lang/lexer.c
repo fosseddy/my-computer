@@ -5,8 +5,8 @@
 #include <string.h>
 #include <assert.h>
 
-#define KEYWORDS_LEN 21
-static const char * const keywords[KEYWORDS_LEN] = {
+#define KEYWORDS_SIZE 21
+static const char * const keywords[KEYWORDS_SIZE] = {
     "class",   "constructor", "function",
     "method",  "field",       "static",
     "var",     "int",         "char",
@@ -16,8 +16,8 @@ static const char * const keywords[KEYWORDS_LEN] = {
     "else",    "while",       "return"
 };
 
-#define SYMBOLS_LEN 19
-static const char symbols[SYMBOLS_LEN] = {
+#define SYMBOLS_SIZE 19
+static const char symbols[SYMBOLS_SIZE] = {
     '{', '}',
     '(', ')',
     '[', ']',
@@ -28,6 +28,7 @@ static const char symbols[SYMBOLS_LEN] = {
 
 enum Token_Kind {
     TOKEN_KIND_UNINIT,
+
     TOKEN_KIND_KEYWORD,
     TOKEN_KIND_SYMBOL,
     TOKEN_KIND_INT_CONST,
@@ -35,18 +36,16 @@ enum Token_Kind {
     TOKEN_KIND_IDENTIFIER,
 };
 
+#define VALUE_SIZE 80
 struct Token {
     enum Token_Kind kind;
-    char *value;
+    char value[VALUE_SIZE];
 };
 
 struct Lexer {
     FILE *file;
     bool has_tokens;
-    struct Token *token;
 };
-
-void lexer_advance(struct Lexer *lex);
 
 struct Lexer *make_lexer(const char *file_name)
 {
@@ -58,7 +57,6 @@ struct Lexer *make_lexer(const char *file_name)
 
     lex->file = f;
     lex->has_tokens = true;
-    lex->token = NULL;
 
     return lex;
 }
@@ -69,121 +67,198 @@ void free_lexer(struct Lexer *lex)
     free(lex);
 }
 
-#define MAX_VALUE_LEN 80
-void lexer_advance(struct Lexer *lex)
+static bool is_symbol(const char c)
 {
-    while (lex->has_tokens) {
-        char value[MAX_VALUE_LEN] = {0};
-        size_t i = 0;
-        char c = '\0';
+    for (size_t i = 0; i < SYMBOLS_SIZE; ++i) {
+        if (c == symbols[i]) {
+            return true;
+        }
+    }
 
-        for (;;) {
-            c = fgetc(lex->file);
+    return false;
+}
 
-            if (feof(lex->file) || isspace(c)) break;
+static bool is_keyword(const char *s)
+{
+    for (size_t i = 0; i < KEYWORDS_SIZE; ++i) {
+        if (strcmp(keywords[i], s) == 0) {
+            return true;
+        }
+    }
 
-            if (c == '/') {
-                char next = fgetc(lex->file);
-                // line comment
-                if (next == '/') {
-                    while (c != '\n' && !feof(lex->file)) {
-                        c = fgetc(lex->file);
-                    }
-                    continue;
-                // doc or multiline comment
-                } else if (next == '*') {
-                    bool found_closing = false;
-                    while (!feof(lex->file)) {
-                        c = fgetc(lex->file);
-                        if (c == '*' || c == '/') {
-                            value[i] = c;
-                            i++;
-                        }
+    return false;
+}
 
-                        if (strcmp(value, "*/") == 0 ||
-                                strcmp(value, "**/") == 0) {
-                            found_closing = true;
-                            break;
-                        }
-                    }
-                    assert(found_closing);
-                    memset(value, 0, MAX_VALUE_LEN);
-                    i = 0;
-                    continue;
-                // it is going to be symbol
+static bool is_integer(const char *s)
+{
+    for (size_t i = 0; i < strlen(s); ++i) {
+        if (!isdigit(s[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void lexer_advance(struct Lexer *lex, struct Token *token)
+{
+    char value[VALUE_SIZE] = {0};
+    size_t value_index = 0;
+    char c = '\0';
+
+    for (;;) {
+        c = fgetc(lex->file);
+        if (c == EOF) break;
+
+        if (isspace(c)) {
+            if (strlen(value) > 0) {
+                if (is_keyword(value)) {
+                    token->kind = TOKEN_KIND_KEYWORD;
+                } else if (is_integer(value)) {
+                    token->kind = TOKEN_KIND_INT_CONST;
                 } else {
-                    ungetc(next, lex->file);
+                    token->kind = TOKEN_KIND_IDENTIFIER;
                 }
-            }
 
-            // check for symbols
-            bool symbol_found = false;
-            for (size_t i = 0; i < SYMBOLS_LEN; ++i) {
-                if (c == symbols[i]) {
-                    symbol_found = true;
-                    break;
-                }
-            }
-
-            if (symbol_found) {
-                // word does not have space before symbol
-                if (strlen(value) > 0) {
-                    ungetc(c, lex->file);
-                } else {
-                    // symbol symbol
-                    value[i] = c;
-                }
+                strcpy(token->value, value);
                 break;
             }
-
-            // check for string
-            if (c == '"') {
-                bool found_closing = false;
-                while (!feof(lex->file)) {
-                    c = fgetc(lex->file);
-
-                    if (c == '"') {
-                        found_closing = true;
-                        break;
-                    }
-
-                    value[i] = c;
-                    i++;
-                }
-
-                assert(found_closing);
-                break;
-            }
-
-            value[i] = c;
-            i++;
+            continue;
         }
 
-        // last value should be 0 so it is null terminated
-        assert(i < MAX_VALUE_LEN);
+        // remove comments
+        if (c == '*') {
+            char next = fgetc(lex->file);
+            if (next == '/') {
+                assert(0 && "Closing comment tag found, but no opening");
+            } else {
+                ungetc(next, lex->file);
+            }
+        }
 
-        lex->has_tokens = !feof(lex->file);
+        if (c == '/') {
+            char next = fgetc(lex->file);
+            // line comment
+            if (next == '/') {
+                while (c != EOF && c != '\n') {
+                    c = fgetc(lex->file);
+                }
+                continue;
+            // doc or multiline comment
+            } else if (next == '*') {
+                // add extra '*' if it is doc comment
+                next = fgetc(lex->file);
+                if (next != '*') {
+                    ungetc(next, lex->file);
+                }
 
-        if (strlen(value) == 0) continue;
+                char tmp[3] = {0};
+                size_t i = 0;
+                while (c != EOF && strcmp(tmp, "*/") != 0) {
+                    c = fgetc(lex->file);
 
-        printf("%s\n", value);
-        break;
+                    if (c == '*' || c == '/') {
+                        tmp[i] = c;
+                        i++;
+                        // overflow of tmp buffer, forgot to close comment tag
+                        assert(i < 3);
+                    }
+                }
+                continue;
+            } else {
+                ungetc(next, lex->file);
+            }
+        }
+
+        if (is_symbol(c)) {
+            if (strlen(value) > 0) {
+                ungetc(c, lex->file);
+
+                if (is_keyword(value)) {
+                    token->kind = TOKEN_KIND_KEYWORD;
+                } else if (is_integer(value)) {
+                    token->kind = TOKEN_KIND_INT_CONST;
+                } else {
+                    token->kind = TOKEN_KIND_IDENTIFIER;
+                }
+
+                strcpy(token->value, value);
+            } else {
+                value[value_index] = c;
+                token->kind = TOKEN_KIND_SYMBOL;
+                strcpy(token->value, value);
+            }
+            break;
+        }
+
+        if (c == '"') {
+            while (c != EOF) {
+                c = fgetc(lex->file);
+                if (c == '"') break;
+
+                value[value_index] = c;
+                value_index++;
+
+                assert(value_index < VALUE_SIZE);
+            }
+            token->kind = TOKEN_KIND_STR_CONST;
+            strcpy(token->value, value);
+            break;
+        }
+
+        value[value_index] = c;
+        value_index++;
+
+        assert(value_index < VALUE_SIZE);
     }
+
+    if (strlen(value) == 0) {
+        token->kind = TOKEN_KIND_UNINIT;
+    }
+
+    lex->has_tokens = !feof(lex->file);
 }
 
 int main(int argc, char **argv)
 {
-    (void)keywords;
-
     assert(argc > 1);
     const char *in_file = argv[1];
 
     struct Lexer *lex = make_lexer(in_file);
+    struct Token *token = malloc(sizeof(struct Token));
 
+    printf("<tokens>\n");
     while (lex->has_tokens) {
-        lexer_advance(lex);
-    }
+        lexer_advance(lex, token);
 
+        switch (token->kind) {
+            case TOKEN_KIND_KEYWORD:
+                printf("<keyword> %s </keyword>\n", token->value);
+                break;
+
+            case TOKEN_KIND_IDENTIFIER:
+                printf("<identifier> %s </identifier>\n", token->value);
+                break;
+
+            case TOKEN_KIND_SYMBOL:
+                printf("<symbol> %s </symbol>\n", token->value);
+                break;
+
+            case TOKEN_KIND_INT_CONST:
+                printf("<integerConstant> %s </integerConstant>\n", token->value);
+                break;
+
+            case TOKEN_KIND_STR_CONST:
+                printf("<stringConstant> %s </stringConstant>\n", token->value);
+                break;
+
+            case TOKEN_KIND_UNINIT: break;
+            default: assert(0 && "Uncreachable");
+        }
+    }
+    printf("</tokens>\n");
+
+    free(token);
     free_lexer(lex);
 
     return 0;
