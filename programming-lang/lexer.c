@@ -206,6 +206,6 @@ LEX_AGAIN:
         lex->token->kind = TOKEN_KIND_EOF;
         lex->has_tokens = false;
     } else {
-        lex->token->kind = TOKEN_KIND_ILLEGAL;
+        lex->token->kind = ILLEGAL_TOKEN;
     }
 }

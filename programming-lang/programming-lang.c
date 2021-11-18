@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
             case TOKEN_KIND_EOF: break;
 
-            case TOKEN_KIND_ILLEGAL:
+            case ILLEGAL_TOKEN:
                 printf("Unknown token: `%s`\n", lex->token->value);
                 exit(1);
 
