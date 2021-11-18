@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "lexer.h"
@@ -35,9 +36,13 @@ int main(int argc, char **argv)
                 printf("    string:     %s\n", lex->token->value);
                 break;
 
-            case TOKEN_KIND_UNINIT:
-            default:
-                break;
+            case TOKEN_KIND_EOF: break;
+
+            case TOKEN_KIND_ILLEGAL:
+                printf("Unknown token: `%s`\n", lex->token->value);
+                exit(1);
+
+            default: assert(0 && "Unreachable");
         }
     }
 
