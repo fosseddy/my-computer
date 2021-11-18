@@ -107,8 +107,6 @@ static void lexer_lex_identifier(struct Lexer *lex)
         lexer_next(lex);
     }
 
-    lex->token->value[i] = '\0';
-
     if (is_keyword(lex->token->value)) {
         lex->token->kind = TOKEN_KIND_KEYWORD;
     } else {
@@ -131,8 +129,6 @@ static void lexer_lex_int_constant(struct Lexer *lex)
 
         lexer_next(lex);
     }
-
-    lex->token->value[i] = '\0';
 }
 
 static void lexer_lex_str_constant(struct Lexer *lex)
@@ -151,8 +147,6 @@ static void lexer_lex_str_constant(struct Lexer *lex)
 
         lexer_next(lex);
     }
-
-    lex->token->value[i] = '\0';
 }
 
 struct Lexer *make_lexer(const char *file_name)
@@ -183,6 +177,7 @@ void free_lexer(struct Lexer *lex)
 void lexer_advance(struct Lexer *lex)
 {
     if (!lex->has_tokens) return;
+    memset(lex->token->value, 0, TOKEN_VALUE_SIZE);
 
 LEX_AGAIN:
     lexer_next(lex);
@@ -207,10 +202,10 @@ LEX_AGAIN:
 
         lex->token->kind = TOKEN_KIND_SYMBOL;
         lex->token->value[0] = lex->ch;
-        lex->token->value[1] = '\0';
+    } else if (lex->ch == -1) {
+        lex->token->kind = TOKEN_KIND_EOF;
     } else {
-        lex->token->kind = TOKEN_KIND_UNINIT;
-        lex->token->value[0] = '\0';
+        lex->token->kind = TOKEN_KIND_ILLEGAL;
     }
 
     lex->has_tokens = !feof(lex->file);
