@@ -204,9 +204,8 @@ LEX_AGAIN:
         lex->token->value[0] = lex->ch;
     } else if (lex->ch == -1) {
         lex->token->kind = TOKEN_KIND_EOF;
+        lex->has_tokens = false;
     } else {
         lex->token->kind = TOKEN_KIND_ILLEGAL;
     }
-
-    lex->has_tokens = !feof(lex->file);
 }
