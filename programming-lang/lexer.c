@@ -26,7 +26,8 @@ static const char symbols[SYMBOLS_SIZE] = {
     '&', '|', '<', '>', '=', '~'
 };
 
-static bool is_keyword(const char *s) {
+static bool is_keyword(const char *s)
+{
     for (size_t i = 0; i < KEYWORDS_SIZE; ++i) {
         if (strcmp(s, keywords[i]) == 0) {
             return true;
@@ -36,7 +37,8 @@ static bool is_keyword(const char *s) {
     return false;
 }
 
-static bool is_symbol(const char c) {
+static bool is_symbol(const char c)
+{
     for (size_t i = 0; i < SYMBOLS_SIZE; ++i) {
         if (c == symbols[i]) {
             return true;
