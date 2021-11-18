@@ -320,7 +320,8 @@ static void translate_ret(struct Translator *t)
     fprintf(t->f, "0;JMP\n");
 }
 
-struct Translator make_translator(const char *file_path) {
+struct Translator make_translator(const char *file_path)
+{
     FILE *file = fopen(file_path, "w");
     assert (file != NULL);
 
