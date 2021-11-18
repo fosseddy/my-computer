@@ -1,5 +1,5 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c11 -pedantic
 
-lexer: ./lexer.c
-	$(CC) $(CFLAGS) -o lexer ./lexer.c
+compile: ./*.c
+	$(CC) $(CFLAGS) -o programming-lang ./*.c
