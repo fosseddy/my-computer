@@ -21,6 +21,7 @@ struct Token {
 };
 
 struct Lexer {
+    char ch;
     FILE *file;
     bool has_tokens;
     struct Token *token;
