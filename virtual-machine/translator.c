@@ -95,7 +95,6 @@ static void translate_static_push_pop(struct Instruction *inst,
         jump_to_stack_pointer(t->f);
         fprintf(t->f, "D=M\n");
 
-        // @TODO: change for file name
         fprintf(t->f, "@%s.%li\n", t->file_name, inst->mem_offset);
         fprintf(t->f, "M=D\n");
     }
