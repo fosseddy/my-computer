@@ -5,7 +5,8 @@
 #include <stdbool.h>
 
 enum Token_Kind {
-    TOKEN_KIND_UNINIT,
+    TOKEN_KIND_ILLEGAL,
+    TOKEN_KIND_EOF,
 
     TOKEN_KIND_KEYWORD,
     TOKEN_KIND_IDENT,
