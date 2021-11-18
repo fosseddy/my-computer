@@ -202,7 +202,7 @@ LEX_AGAIN:
 
         lex->token->kind = TOKEN_KIND_SYMBOL;
         lex->token->value[0] = lex->ch;
-    } else if (lex->ch == -1) {
+    } else if (lex->ch == EOF) {
         lex->token->kind = TOKEN_KIND_EOF;
         lex->has_tokens = false;
     } else {
