@@ -48,6 +48,113 @@ static bool is_symbol(const char c)
     return false;
 }
 
+static int lexer_peek(struct Lexer *lex)
+{
+    int c = fgetc(lex->file);
+    ungetc(c, lex->file);
+
+    return c;
+}
+
+static void lexer_next(struct Lexer *lex)
+{
+    lex->ch = fgetc(lex->file);
+}
+
+static void lexer_skip_whitespace(struct Lexer *lex)
+{
+    while (lex->ch != EOF && isspace(lex->ch)) {
+        lexer_next(lex);
+    }
+}
+
+static void lexer_skip_comment(struct Lexer *lex)
+{
+    // line comment
+    if (lex->ch == '/') {
+        while (lex->ch != EOF && lex->ch != '\n') {
+            lexer_next(lex);
+        }
+    // doc or multiline comment
+    } else {
+        // add extra * if doc comment
+        if (lexer_peek(lex) == '*') {
+            lexer_next(lex);
+        }
+
+        while (lex->ch != EOF) {
+            lexer_next(lex);
+            if (lex->ch == '*' && lexer_peek(lex) == '/') {
+                lexer_next(lex);
+                break;
+            }
+        }
+    }
+}
+
+static void lexer_lex_identifier(struct Lexer *lex)
+{
+    size_t i = 0;
+
+    while (lex->ch != EOF) {
+        lex->token->value[i] = lex->ch;
+        i++;
+        assert(i < TOKEN_VALUE_SIZE);
+
+        char next = lexer_peek(lex);
+        if (isspace(next) || is_symbol(next)) break;
+
+        lexer_next(lex);
+    }
+
+    lex->token->value[i] = '\0';
+
+    if (is_keyword(lex->token->value)) {
+        lex->token->kind = TOKEN_KIND_KEYWORD;
+    } else {
+        lex->token->kind = TOKEN_KIND_IDENT;
+    }
+}
+
+static void lexer_lex_int_constant(struct Lexer *lex)
+{
+    lex->token->kind = TOKEN_KIND_INT_CONST;
+
+    size_t i = 0;
+
+    while (lex->ch != EOF) {
+        lex->token->value[i] = lex->ch;
+        i++;
+        assert(i < TOKEN_VALUE_SIZE);
+
+        if (!isdigit(lexer_peek(lex))) break;
+
+        lexer_next(lex);
+    }
+
+    lex->token->value[i] = '\0';
+}
+
+static void lexer_lex_str_constant(struct Lexer *lex)
+{
+    // skip first "
+    lexer_next(lex);
+
+    lex->token->kind = TOKEN_KIND_STR_CONST;
+
+    size_t i = 0;
+
+    while (lex->ch != EOF && lex->ch != '"') {
+        lex->token->value[i] = lex->ch;
+        i++;
+        assert(i < TOKEN_VALUE_SIZE);
+
+        lexer_next(lex);
+    }
+
+    lex->token->value[i] = '\0';
+}
+
 struct Lexer *make_lexer(const char *file_name)
 {
     FILE *f = fopen(file_name, "r");
@@ -56,6 +163,7 @@ struct Lexer *make_lexer(const char *file_name)
     struct Lexer *lex = malloc(sizeof(struct Lexer));
     assert(lex != NULL);
 
+    lex->ch = '\0';
     lex->file = f;
     lex->has_tokens = true;
 
@@ -75,104 +183,30 @@ void free_lexer(struct Lexer *lex)
 void lexer_advance(struct Lexer *lex)
 {
     if (!lex->has_tokens) return;
-    char c = '\0';
 
 LEX_AGAIN:
-    c = fgetc(lex->file);
+    lexer_next(lex);
 
-    // skip whitespace
-    while (c != EOF && isspace(c)) {
-        c = fgetc(lex->file);
-    }
+    lexer_skip_whitespace(lex);
 
-    // remove comments
-    if (c == '/') {
-        char next = fgetc(lex->file);
-        // line comment
-        if (next == '/') {
-            while (c != EOF && c != '\n') {
-                c = fgetc(lex->file);
+    if (lex->ch == '_' || isalpha(lex->ch)) {
+        lexer_lex_identifier(lex);
+    } else if (isdigit(lex->ch)) {
+        lexer_lex_int_constant(lex);
+    } else if (lex->ch == '"') {
+        lexer_lex_str_constant(lex);
+    } else if (is_symbol(lex->ch)) {
+        if (lex->ch == '/') {
+            char next = lexer_peek(lex);
+            if (next == '/' || next == '*') {
+                lexer_next(lex);
+                lexer_skip_comment(lex);
+                goto LEX_AGAIN;
             }
-            goto LEX_AGAIN;
-        // doc or multiline comment
-        } else if (next == '*') {
-            // add extra * if doc comment
-            next = fgetc(lex->file);
-            if (next != '*') {
-                ungetc(next, lex->file);
-            }
-
-            char tmp[3] = {0};
-            while (c != EOF && strcmp(tmp, "*/") != 0) {
-                c = fgetc(lex->file);
-                if (strlen(tmp) == 0 && c == '*') {
-                    tmp[0] = c;
-                }
-
-                if (strlen(tmp) == 1 && c == '/') {
-                    tmp[1] = c;
-                }
-            }
-            // forgot to close comment tag
-            assert(strcmp(tmp, "*/") == 0);
-            goto LEX_AGAIN;
-        // this is not comment
-        } else {
-            ungetc(next, lex->file);
-        }
-    }
-
-    // identifier or keyword
-    if (c == '_' || isalpha(c)) {
-        size_t i = 0;
-        while (c != EOF && !isspace(c) && !is_symbol(c)) {
-            lex->token->value[i] = c;
-            i++;
-            assert(i < TOKEN_VALUE_SIZE);
-
-            c = fgetc(lex->file);
-        }
-        lex->token->value[i] = '\0';
-
-        if (is_symbol(c)) {
-            ungetc(c, lex->file);
         }
 
-        if (is_keyword(lex->token->value)) {
-            lex->token->kind = TOKEN_KIND_KEYWORD;
-        } else {
-            lex->token->kind = TOKEN_KIND_IDENT;
-        }
-    // integer constant
-    } else if (isdigit(c)) {
-        lex->token->kind = TOKEN_KIND_INT_CONST;
-        size_t i = 0;
-        while (c != EOF && isdigit(c)) {
-            lex->token->value[i] = c;
-            i++;
-            assert(i < TOKEN_VALUE_SIZE);
-
-            c = fgetc(lex->file);
-        }
-        lex->token->value[i] = '\0';
-    // string constant
-    } else if (c == '"') {
-        lex->token->kind = TOKEN_KIND_STR_CONST;
-        size_t i = 0;
-        // skip first "
-        c = fgetc(lex->file);
-        while (c != EOF && c != '"') {
-            lex->token->value[i] = c;
-            i++;
-            assert(i < TOKEN_VALUE_SIZE);
-
-            c = fgetc(lex->file);
-        }
-        lex->token->value[i] = '\0';
-    // symbol
-    } else if (is_symbol(c)) {
         lex->token->kind = TOKEN_KIND_SYMBOL;
-        lex->token->value[0] = c;
+        lex->token->value[0] = lex->ch;
         lex->token->value[1] = '\0';
     } else {
         lex->token->kind = TOKEN_KIND_UNINIT;
