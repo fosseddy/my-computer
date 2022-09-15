@@ -1,5 +1,10 @@
-CC=gcc
-CFLAGS=-Wall -Wextra -std=c11 -pedantic
+assembler: main.o
+	gcc -Wall -Wextra -std=c11 -pedantic main.o -o assembler
 
-assembler: ./*.c
-	$(CC) $(CFLAGS) -o assembler ./*.c
+main.o: main.c
+	gcc -Wall -Wextra -std=c11 -pedantic -c main.c -o main.o
+
+.PHONY: clean
+clean:
+	rm assembler
+	rm main.o
