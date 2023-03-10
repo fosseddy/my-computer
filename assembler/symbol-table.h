@@ -1,17 +1,13 @@
-#define LABEL_CAPACITY 101
+struct slot;
 
-struct cell {
-    char key[LABEL_CAPACITY];
-    int value;
-};
-
-struct symbol_table {
+struct symtable {
     size_t size;
-    struct cell *cells;
+    size_t cap;
+    struct slot *slots;
 };
 
-struct symbol_table make_symbol_table();
-void free_symbol_table(struct symbol_table *t);
-void symbol_table_insert(struct symbol_table *t, const char *k, int v);
-int symbol_table_contains(struct symbol_table *t, const char *k);
-int symbol_table_get(struct symbol_table *t, const char *k);
+void symtable_init(struct symtable *st);
+void symtable_free(struct symtable *st);
+void symtable_put(struct symtable *st, char *k, int v);
+int symtable_get(struct symtable *st, char *k);
+int symtable_has(struct symtable *st, char *k);

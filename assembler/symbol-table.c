@@ -4,78 +4,88 @@
 
 #include "symbol-table.h"
 
-struct symbol_table make_symbol_table()
+struct slot {
+    char key[128];
+    int value;
+};
+
+void symtable_init(struct symtable *st)
 {
-    struct symbol_table t = {
-        .size = 0,
-        .cells = NULL
-    };
+    st->size = 0;
+    st->cap = 32;
+    st->slots = malloc(st->cap * sizeof(struct slot));
+    assert(st->slots != NULL);
 
-    symbol_table_insert(&t, "SP", 0);
-    symbol_table_insert(&t, "LCL", 1);
-    symbol_table_insert(&t, "ARG", 2);
-    symbol_table_insert(&t, "THIS", 3);
-    symbol_table_insert(&t, "THAT", 4);
+    symtable_put(st, "SP", 0);
+    symtable_put(st, "LCL", 1);
+    symtable_put(st, "ARG", 2);
+    symtable_put(st, "THIS", 3);
+    symtable_put(st, "THAT", 4);
 
-    symbol_table_insert(&t, "SCREEN", 16384);
-    symbol_table_insert(&t, "KBD", 24576);
+    symtable_put(st, "SCREEN", 16384);
+    symtable_put(st, "KBD", 24576);
 
-    symbol_table_insert(&t, "R0", 0);
-    symbol_table_insert(&t, "R1", 1);
-    symbol_table_insert(&t, "R2", 2);
-    symbol_table_insert(&t, "R3", 3);
-    symbol_table_insert(&t, "R4", 4);
-    symbol_table_insert(&t, "R5", 5);
-    symbol_table_insert(&t, "R6", 6);
-    symbol_table_insert(&t, "R7", 7);
-    symbol_table_insert(&t, "R8", 8);
-    symbol_table_insert(&t, "R9", 9);
-    symbol_table_insert(&t, "R10", 10);
-    symbol_table_insert(&t, "R11", 11);
-    symbol_table_insert(&t, "R12", 12);
-    symbol_table_insert(&t, "R13", 13);
-    symbol_table_insert(&t, "R14", 14);
-    symbol_table_insert(&t, "R15", 15);
-
-    return t;
+    symtable_put(st, "R0", 0);
+    symtable_put(st, "R1", 1);
+    symtable_put(st, "R2", 2);
+    symtable_put(st, "R3", 3);
+    symtable_put(st, "R4", 4);
+    symtable_put(st, "R5", 5);
+    symtable_put(st, "R6", 6);
+    symtable_put(st, "R7", 7);
+    symtable_put(st, "R8", 8);
+    symtable_put(st, "R9", 9);
+    symtable_put(st, "R10", 10);
+    symtable_put(st, "R11", 11);
+    symtable_put(st, "R12", 12);
+    symtable_put(st, "R13", 13);
+    symtable_put(st, "R14", 14);
+    symtable_put(st, "R15", 15);
 }
 
-void symbol_table_insert(struct symbol_table *t, const char *k, int v)
+void symtable_put(struct symtable *st, char *k, int v)
 {
-    t->size++;
+    struct slot *newslot;
 
-    t->cells = realloc(t->cells, t->size * sizeof(struct cell));
-    assert(t->cells != NULL);
+    if (st->size == st->cap) {
+        st->cap *= 2;
+        st->slots = realloc(st->slots, st->cap * sizeof(struct slot));
+        assert(st->slots != NULL);
+    }
 
-    struct cell c = { .value = v };
-    strcpy(c.key, k);
+    newslot = st->slots + st->size;
+    newslot->value = v;
+    memset(newslot->key, 0, sizeof(newslot->key));
+    strncpy(newslot->key, k, sizeof(newslot->key) - 1);
 
-    t->cells[t->size - 1] = c;
+    st->size++;
 }
 
-int symbol_table_contains(struct symbol_table *t, const char *k)
+int symtable_has(struct symtable *st, char *k)
 {
-    for (size_t i = 0; i < t->size; ++i) {
-        if (strcmp(t->cells[i].key, k) == 0) {
+    size_t i;
+
+    for (i = 0; i < st->size; i++) {
+        if (strcmp(st->slots[i].key, k) == 0) {
             return 1;
         }
     }
-
     return 0;
 }
 
-int symbol_table_get(struct symbol_table *t, const char *k)
+int symtable_get(struct symtable *st, char *k)
 {
-    for (size_t i = 0; i < t->size; ++i) {
-        if (strcmp(t->cells[i].key, k) == 0) {
-            return t->cells[i].value;
+    size_t i;
+
+    for (i = 0; i < st->size; i++) {
+        if (strcmp(st->slots[i].key, k) == 0) {
+            return st->slots[i].value;
         }
     }
-
-    return -1;
+    return 0;
 }
 
-void free_symbol_table(struct symbol_table *t)
+void symtable_free(struct symtable *st)
 {
-    free(t->cells);
+    free(st->slots);
 }
