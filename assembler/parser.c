@@ -9,25 +9,47 @@
 
 #include "parser.h"
 
-static void trim_left(char *s);
-static void trim_right(char *s);
-
-struct parser make_parser(const char *file_path)
+static void trim_left(char *s)
 {
-    FILE *f = fopen(file_path, "r");
-    assert(f != NULL);
+    size_t pad = 0 ;
 
-    return (struct parser) {
-        .file = f,
-        .line_size = 0,
-        .line = NULL
-    };
+    while (isspace(s[pad])) pad++;
+
+    if (pad > 0) {
+        size_t i;
+
+        for (i = pad; i < strlen(s); ++i) {
+            s[i - pad] = s[i];
+        }
+        s[i - pad] = '\0';
+    }
 }
 
-int parser_peek_line(struct parser *p)
+static void trim_right(char *s)
+{
+    size_t pad;
+
+    if (*s == '\0') return;
+
+    pad = strlen(s) - 1;
+    while (isspace(s[pad])) pad--;
+    s[pad + 1] = '\0';
+}
+
+void parser_init(struct parser *p, char *filepath)
+{
+    p->line_size = 0;
+    p->line = NULL;
+    p->file = fopen(filepath, "r");
+    assert(p->file != NULL);
+}
+
+int peek_line(struct parser *p)
 {
     for (;;) {
-        ssize_t read = getline(&p->line, &p->line_size, p->file);
+        ssize_t read;
+
+        read = getline(&p->line, &p->line_size, p->file);
 
         if (read == -1) {
             fclose(p->file);
@@ -56,34 +78,26 @@ int parser_peek_line(struct parser *p)
     }
 }
 
-struct instruction parser_parse_instruction(struct parser *p)
+void parse_instruction(struct parser *p, struct instruction *inst)
 {
-    assert(strlen(p->line) > 0);
-
-    struct instruction inst = {0};
-
     // instruction A starts with @
     if (strncmp(p->line, "@", 1) == 0) {
-        assert(strlen(p->line) - 1 < LABEL_CAPACITY);
-
-        inst.kind = INSTRUCTION_KIND_A;
+        inst->kind = INSTRUCTION_KIND_A;
         // remove '@' from inst: @R1 -> R1
         for (size_t i = 1; i <= strlen(p->line); ++i) {
-            inst.label[i - 1] = p->line[i];
+            inst->label[i - 1] = p->line[i];
         }
     // instruction L starts with '(' and ends with ')'
     } else if (strncmp(p->line, "(", 1) == 0) {
-        assert(strlen(p->line) - 2 < LABEL_CAPACITY);
-
-        inst.kind = INSTRUCTION_KIND_L;
+        inst->kind = INSTRUCTION_KIND_L;
         // remove '(' and ')' from label: (LABEL_NAME) -> LABEL_NAME
         size_t i = 1;
         for (; i < strlen(p->line) - 1; ++i) {
-            inst.label[i - 1] = p->line[i];
+            inst->label[i - 1] = p->line[i];
         }
-        inst.label[i - 1] = '\0';
+        inst->label[i - 1] = '\0';
     } else {
-        inst.kind = INSTRUCTION_KIND_C;
+        inst->kind = INSTRUCTION_KIND_C;
 
         // if instruction C includes '=', then extract dest
         if (strchr(p->line, '=') != NULL) {
@@ -91,9 +105,7 @@ struct instruction parser_parse_instruction(struct parser *p)
             strcpy(line_copy, p->line);
 
             char *dest = strtok(line_copy, "=");
-
-            assert(strlen(dest) < INSTRUCTION_CAPACITY);
-            strcpy(inst.dest, dest);
+            strcpy(inst->dest, dest);
 
             char *next_tok = strtok(NULL, "=");
             strcpy(p->line, next_tok);
@@ -109,34 +121,9 @@ struct instruction parser_parse_instruction(struct parser *p)
 
             char *jump = strtok(NULL, ";");
 
-            assert(strlen(jump) < INSTRUCTION_CAPACITY);
-            strcpy(inst.jump, jump);
+            strcpy(inst->jump, jump);
         }
 
-        assert(strlen(p->line) < INSTRUCTION_CAPACITY);
-        strcpy(inst.comp, p->line);
+        strcpy(inst->comp, p->line);
     }
-
-    return inst;
-}
-
-static void trim_left(char *s)
-{
-    size_t pad = 0;
-    while (isspace(s[pad])) pad++;
-
-    if (pad > 0) {
-        for (size_t i = pad; i <= strlen(s); ++i) {
-            s[i - pad] = s[i];
-        }
-    }
-}
-
-static void trim_right(char *s)
-{
-    if (*s == '\0') return;
-
-    size_t pad = strlen(s) - 1;
-    while (isspace(s[pad])) pad--;
-    s[pad + 1] = '\0';
 }

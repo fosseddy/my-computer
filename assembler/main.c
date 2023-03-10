@@ -8,17 +8,24 @@
 #include "symbol-table.h"
 #include "translator.h"
 
-#define VARIABLES_RAM 16
+enum {
+    VARS_ADDR_START = 16,
+    BINARY_LEN = 17
+};
 
 static char outfile[256];
 static struct symtable symtable;
 
 void populate_symtable(char *infile)
 {
-    struct parser p = make_parser(infile);
+    struct parser p;
     size_t line_num = 0;
-    while (parser_peek_line(&p)) {
-        struct instruction inst = parser_parse_instruction(&p);
+
+    parser_init(&p, infile);
+    while (peek_line(&p)) {
+        struct instruction inst;
+
+        parse_instruction(&p, &inst);
         if (inst.kind == INSTRUCTION_KIND_L) {
             symtable_put(&symtable, inst.label, line_num);
         } else {
@@ -29,17 +36,24 @@ void populate_symtable(char *infile)
 
 void generate_and_write_machine_code(char *infile)
 {
-    struct parser p = make_parser(infile);
-    FILE *fout = fopen(outfile, "w");
+    struct parser p;
+    FILE *fout;
+    size_t var_addr = VARS_ADDR_START;
+
+    parser_init(&p, infile);
+    fout = fopen(outfile, "w");
     assert(fout != NULL);
 
-    size_t var_addr = VARIABLES_RAM;
-    while (parser_peek_line(&p)) {
-        struct instruction inst = parser_parse_instruction(&p);
+    while (peek_line(&p)) {
+        struct instruction inst;
+        char code[BINARY_LEN];
 
+        parse_instruction(&p, &inst);
         switch (inst.kind) {
             case INSTRUCTION_KIND_A: {
-                int val = atoi(inst.label);
+                int val;
+
+                val = atoi(inst.label);
                 if (val == 0) {
                     if (symtable_has(&symtable, inst.label)) {
                         val = symtable_get(&symtable, inst.label);
@@ -50,14 +64,12 @@ void generate_and_write_machine_code(char *infile)
                     }
                 }
 
-                char code[BINARY_LENGTH];
-                translator_translate_inst_a(val, code);
+                translate_inst_a(val, code);
                 fprintf(fout, "%s\n", code);
             } break;
 
             case INSTRUCTION_KIND_C: {
-                char code[BINARY_LENGTH];
-                translator_translate_inst_c(&inst, code);
+                translate_inst_c(&inst, code);
                 fprintf(fout, "%s\n", code);
             } break;
 
@@ -71,12 +83,14 @@ void generate_and_write_machine_code(char *infile)
 void create_outfile(char *infile)
 {
     char *ext = ".hack";
-    size_t maxlen = sizeof(outfile) - 1,
-           extlen = strlen(ext),
-           i = 0;
+    size_t i, maxlen, extlen;
 
+    maxlen = sizeof(outfile) - 1;
+    extlen = strlen(ext);
+
+    i = 0;
     while (infile[i] != '\0') {
-        if (infile[i] == '.' || i > maxlen) break;
+        if (infile[i] == '.') break;
         outfile[i] = infile[i];
         i++;
     }
@@ -92,7 +106,7 @@ void create_outfile(char *infile)
 
 int main(int argc, char *argv[])
 {
-    // @Todo(art): user friendly error handling
+    // @Todo(art): proper error handling
     assert(argc > 1);
 
     char *infile = argv[1];

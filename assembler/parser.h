@@ -1,6 +1,3 @@
-#define INSTRUCTION_CAPACITY 4
-#define LABEL_CAPACITY 101
-
 struct parser {
     FILE *file;
     char *line;
@@ -15,12 +12,12 @@ enum instruction_kind {
 
 struct instruction {
     enum instruction_kind kind;
-    char dest[INSTRUCTION_CAPACITY];
-    char comp[INSTRUCTION_CAPACITY];
-    char jump[INSTRUCTION_CAPACITY];
-    char label[LABEL_CAPACITY];
+    char dest[4];
+    char comp[4];
+    char jump[4];
+    char label[128];
 };
 
-struct parser make_parser(const char *file_path);
-int parser_peek_line(struct parser *p);
-struct instruction parser_parse_instruction(struct parser *p);
+void parser_init(struct parser *p, char *filepath);
+int peek_line(struct parser *p);
+void parse_instruction(struct parser *p, struct instruction *inst);
