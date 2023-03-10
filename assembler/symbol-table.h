@@ -1,24 +1,17 @@
-#ifndef SYMBOL_TABLE_H
-#define SYMBOL_TABLE_H
+#define LABEL_CAPACITY 101
 
-#include <stdbool.h>
-
-#include "parser.h"
-
-typedef struct {
+struct cell {
     char key[LABEL_CAPACITY];
     int value;
-} Cell;
+};
 
-typedef struct {
+struct symbol_table {
     size_t size;
-    Cell *cells;
-} Symbol_Table;
+    struct cell *cells;
+};
 
-Symbol_Table make_symbol_table();
-void free_symbol_table(Symbol_Table *t);
-void symbol_table_insert(Symbol_Table *t, const char *k, int v);
-bool symbol_table_contains(Symbol_Table *t, const char *k);
-int symbol_table_get(Symbol_Table *t, const char *k);
-
-#endif
+struct symbol_table make_symbol_table();
+void free_symbol_table(struct symbol_table *t);
+void symbol_table_insert(struct symbol_table *t, const char *k, int v);
+int symbol_table_contains(struct symbol_table *t, const char *k);
+int symbol_table_get(struct symbol_table *t, const char *k);

@@ -5,25 +5,26 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <stdio.h>
 
 #include "parser.h"
 
 static void trim_left(char *s);
 static void trim_right(char *s);
 
-Parser make_parser(const char *file_path)
+struct parser make_parser(const char *file_path)
 {
     FILE *f = fopen(file_path, "r");
     assert(f != NULL);
 
-    return (Parser) {
+    return (struct parser) {
         .file = f,
         .line_size = 0,
         .line = NULL
     };
 }
 
-bool parser_peek_line(Parser *p)
+int parser_peek_line(struct parser *p)
 {
     for (;;) {
         ssize_t read = getline(&p->line, &p->line_size, p->file);
@@ -31,7 +32,7 @@ bool parser_peek_line(Parser *p)
         if (read == -1) {
             fclose(p->file);
             free(p->line);
-            return false;
+            return 0;
         }
 
         trim_left(p->line);
@@ -51,21 +52,21 @@ bool parser_peek_line(Parser *p)
 
         if (strlen(p->line) == 0) continue;
 
-        return true;
+        return 1;
     }
 }
 
-Instruction parser_parse_instruction(Parser *p)
+struct instruction parser_parse_instruction(struct parser *p)
 {
     assert(strlen(p->line) > 0);
 
-    Instruction inst = {0};
+    struct instruction inst = {0};
 
     // instruction A starts with @
     if (strncmp(p->line, "@", 1) == 0) {
         assert(strlen(p->line) - 1 < LABEL_CAPACITY);
 
-        inst.type = INSTRUCTION_TYPE_A;
+        inst.kind = INSTRUCTION_KIND_A;
         // remove '@' from inst: @R1 -> R1
         for (size_t i = 1; i <= strlen(p->line); ++i) {
             inst.label[i - 1] = p->line[i];
@@ -74,7 +75,7 @@ Instruction parser_parse_instruction(Parser *p)
     } else if (strncmp(p->line, "(", 1) == 0) {
         assert(strlen(p->line) - 2 < LABEL_CAPACITY);
 
-        inst.type = INSTRUCTION_TYPE_L;
+        inst.kind = INSTRUCTION_KIND_L;
         // remove '(' and ')' from label: (LABEL_NAME) -> LABEL_NAME
         size_t i = 1;
         for (; i < strlen(p->line) - 1; ++i) {
@@ -82,7 +83,7 @@ Instruction parser_parse_instruction(Parser *p)
         }
         inst.label[i - 1] = '\0';
     } else {
-        inst.type = INSTRUCTION_TYPE_C;
+        inst.kind = INSTRUCTION_KIND_C;
 
         // if instruction C includes '=', then extract dest
         if (strchr(p->line, '=') != NULL) {

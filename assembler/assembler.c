@@ -12,8 +12,8 @@
 #define OUTPUT_EXT ".hack"
 
 void create_out_file_from_in_file(const char *in_file, char *out_file);
-void populate_sym_table(Symbol_Table *sym_table, const char *in_file);
-void generate_and_write_machine_code(Symbol_Table *sym_table,
+void populate_sym_table(struct symbol_table *sym_table, const char *in_file);
+void generate_and_write_machine_code(struct symbol_table *sym_table,
         const char *in_file, const char *out_file);
 
 int main(int argc, char **argv)
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     char out_file[strlen(in_file) + 2];
     create_out_file_from_in_file(in_file, out_file);
 
-    Symbol_Table sym_table = make_symbol_table();
+    struct symbol_table sym_table = make_symbol_table();
 
     populate_sym_table(&sym_table, in_file);
     generate_and_write_machine_code(&sym_table, in_file, out_file);
@@ -34,13 +34,13 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void populate_sym_table(Symbol_Table *sym_table, const char *in_file)
+void populate_sym_table(struct symbol_table *sym_table, const char *in_file)
 {
-    Parser p = make_parser(in_file);
+    struct parser p = make_parser(in_file);
     size_t line_num = 0;
     while (parser_peek_line(&p)) {
-        Instruction inst = parser_parse_instruction(&p);
-        if (inst.type == INSTRUCTION_TYPE_L) {
+        struct instruction inst = parser_parse_instruction(&p);
+        if (inst.kind == INSTRUCTION_KIND_L) {
             symbol_table_insert(sym_table, inst.label, line_num);
         } else {
             line_num++;
@@ -48,19 +48,19 @@ void populate_sym_table(Symbol_Table *sym_table, const char *in_file)
     }
 }
 
-void generate_and_write_machine_code(Symbol_Table *sym_table,
+void generate_and_write_machine_code(struct symbol_table *sym_table,
         const char *in_file, const char *out_file)
 {
-    Parser p = make_parser(in_file);
+    struct parser p = make_parser(in_file);
     FILE *f_out = fopen(out_file, "w");
     assert(f_out != NULL);
 
     size_t var_addr = VARIABLES_RAM;
     while (parser_peek_line(&p)) {
-        Instruction inst = parser_parse_instruction(&p);
+        struct instruction inst = parser_parse_instruction(&p);
 
-        switch (inst.type) {
-            case INSTRUCTION_TYPE_A: {
+        switch (inst.kind) {
+            case INSTRUCTION_KIND_A: {
                 int val = atoi(inst.label);
                 if (val == 0) {
                     if (symbol_table_contains(sym_table, inst.label)) {
@@ -77,13 +77,13 @@ void generate_and_write_machine_code(Symbol_Table *sym_table,
                 fprintf(f_out, "%s\n", code);
             } break;
 
-            case INSTRUCTION_TYPE_C: {
+            case INSTRUCTION_KIND_C: {
                 char code[BINARY_LENGTH];
                 translator_translate_inst_c(&inst, code);
                 fprintf(f_out, "%s\n", code);
             } break;
 
-            case INSTRUCTION_TYPE_L: break;
+            case INSTRUCTION_KIND_L: break;
         }
     }
 

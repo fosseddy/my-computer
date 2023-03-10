@@ -1,15 +1,17 @@
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "translator.h"
+#include "parser.h"
 
 #define DEST_TABLE_LENGTH 7
 #define JUMP_TABLE_LENGTH 7
 #define COMP_TABLE_LENGTH 28
 
-static char *translation_table_get(Translation_Table *t, size_t t_len, char *k);
+static char *translation_table_get(struct translation_table *t, size_t t_len, char *k);
 
-static Translation_Table dest_table[DEST_TABLE_LENGTH] = {
+static struct translation_table dest_table[DEST_TABLE_LENGTH] = {
     { .key = "M", .value = "001" },
     { .key = "D", .value = "010" },
     { .key = "MD", .value = "011" },
@@ -19,7 +21,7 @@ static Translation_Table dest_table[DEST_TABLE_LENGTH] = {
     { .key = "AMD", .value = "111" }
 };
 
-static Translation_Table jump_table[JUMP_TABLE_LENGTH] = {
+static struct translation_table jump_table[JUMP_TABLE_LENGTH] = {
     { .key = "JGT", .value = "001" },
     { .key = "JEQ", .value = "010" },
     { .key = "JGE", .value = "011" },
@@ -29,7 +31,7 @@ static Translation_Table jump_table[JUMP_TABLE_LENGTH] = {
     { .key = "JMP", .value = "111" }
 };
 
-static Translation_Table comp_table[COMP_TABLE_LENGTH] = {
+static struct translation_table comp_table[COMP_TABLE_LENGTH] = {
     { .key = "0", .value = "0101010" },
     { .key = "1", .value = "0111111" },
     { .key = "-1", .value = "0111010" },
@@ -93,7 +95,7 @@ void translator_translate_inst_a(int val, char *out)
     strcat(out, binary);
 }
 
-void translator_translate_inst_c(Instruction *inst, char *out)
+void translator_translate_inst_c(struct instruction *inst, char *out)
 {
     char dest[4] = "";
     char jump[4] = "";
@@ -125,7 +127,7 @@ void translator_translate_inst_c(Instruction *inst, char *out)
     strcat(out, jump);
 }
 
-static char *translation_table_get(Translation_Table *t, size_t t_len, char *k)
+static char *translation_table_get(struct translation_table *t, size_t t_len, char *k)
 {
     for (size_t i = 0; i < t_len; ++i) {
         if (strcmp(t[i].key, k) == 0) {

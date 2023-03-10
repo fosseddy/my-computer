@@ -4,9 +4,9 @@
 
 #include "symbol-table.h"
 
-Symbol_Table make_symbol_table()
+struct symbol_table make_symbol_table()
 {
-    Symbol_Table t = {
+    struct symbol_table t = {
         .size = 0,
         .cells = NULL
     };
@@ -40,31 +40,31 @@ Symbol_Table make_symbol_table()
     return t;
 }
 
-void symbol_table_insert(Symbol_Table *t, const char *k, int v)
+void symbol_table_insert(struct symbol_table *t, const char *k, int v)
 {
     t->size++;
 
-    t->cells = realloc(t->cells, t->size * sizeof(Cell));
+    t->cells = realloc(t->cells, t->size * sizeof(struct cell));
     assert(t->cells != NULL);
 
-    Cell c = { .value = v };
+    struct cell c = { .value = v };
     strcpy(c.key, k);
 
     t->cells[t->size - 1] = c;
 }
 
-bool symbol_table_contains(Symbol_Table *t, const char *k)
+int symbol_table_contains(struct symbol_table *t, const char *k)
 {
     for (size_t i = 0; i < t->size; ++i) {
         if (strcmp(t->cells[i].key, k) == 0) {
-            return true;
+            return 1;
         }
     }
 
-    return false;
+    return 0;
 }
 
-int symbol_table_get(Symbol_Table *t, const char *k)
+int symbol_table_get(struct symbol_table *t, const char *k)
 {
     for (size_t i = 0; i < t->size; ++i) {
         if (strcmp(t->cells[i].key, k) == 0) {
@@ -75,7 +75,7 @@ int symbol_table_get(Symbol_Table *t, const char *k)
     return -1;
 }
 
-void free_symbol_table(Symbol_Table *t)
+void free_symbol_table(struct symbol_table *t)
 {
     free(t->cells);
 }

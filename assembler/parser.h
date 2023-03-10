@@ -1,34 +1,26 @@
-#ifndef PARSER_H
-#define PARSER_H
-
-#include <stdio.h>
-#include <stdbool.h>
-
 #define INSTRUCTION_CAPACITY 4
 #define LABEL_CAPACITY 101
 
-typedef struct {
+struct parser {
     FILE *file;
     char *line;
     size_t line_size;
-} Parser;
+};
 
-typedef enum {
-    INSTRUCTION_TYPE_A = 0,
-    INSTRUCTION_TYPE_C,
-    INSTRUCTION_TYPE_L
-} Instruction_Type;
+enum instruction_kind {
+    INSTRUCTION_KIND_A = 0,
+    INSTRUCTION_KIND_C,
+    INSTRUCTION_KIND_L
+};
 
-typedef struct {
-    Instruction_Type type;
+struct instruction {
+    enum instruction_kind kind;
     char dest[INSTRUCTION_CAPACITY];
     char comp[INSTRUCTION_CAPACITY];
     char jump[INSTRUCTION_CAPACITY];
     char label[LABEL_CAPACITY];
-} Instruction;
+};
 
-Parser make_parser(const char *file_path);
-bool parser_peek_line(Parser *p);
-Instruction parser_parse_instruction(Parser *p);
-
-#endif
+struct parser make_parser(const char *file_path);
+int parser_peek_line(struct parser *p);
+struct instruction parser_parse_instruction(struct parser *p);
