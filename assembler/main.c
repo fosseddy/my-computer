@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 void print_usage(FILE *stream, char *msg)
 {
@@ -16,21 +18,37 @@ void print_usage(FILE *stream, char *msg)
                     "   path to assembly file\n");
 }
 
-char *read_file(char *filepath)
+char *read_file(char *pathname)
 {
-    FILE *f;
-    char *src;
+    int fd;
     struct stat statbuf;
+    char *src;
 
-    f = fopen(filepath, "r");
-    if (f == NULL) return NULL;
+    fd = open(pathname, O_RDONLY);
+    if (fd < 0) {
+        perror("failed to open file");
+        exit(1);
+    }
 
-    if (stat(filepath, &statbuf) < 0) return NULL;
+    if (fstat(fd, &statbuf) < 0) {
+        perror("failed to get file info");
+        exit(1);
+    }
 
-    src = malloc(statbuf.st_size);
-    if (src == NULL) return NULL;
+    src = malloc(statbuf.st_size + 1);
+    if (src == NULL) {
+        perror("failed to allocate memory for source");
+        exit(1);
+    }
 
-    fread(src, 1, statbuf.st_size, f);
+    if (read(fd, src, statbuf.st_size) < 0) {
+        perror("failed read file content into source");
+        exit(1);
+    }
+
+    src[statbuf.st_size] = '\0';
+
+    close(fd);
     return src;
 }
 
@@ -41,7 +59,7 @@ struct instruction {
 int parse_instruction(struct instruction *inst)
 {
     (void) inst;
-    return 1;
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -58,14 +76,13 @@ int main(int argc, char **argv)
     }
 
     src = read_file(*argv);
-    if (src == NULL) {
-        perror("failed to read file");
-        return 1;
-    }
 
     for (;;) {
-        if (parse_instruction(&inst) == 0) break;
+        if (parse_instruction(&inst) == 0) {
+            break;
+        }
     }
 
+    free(src);
     return 0;
 }
