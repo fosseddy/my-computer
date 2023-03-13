@@ -1,129 +1,116 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <stdio.h>
 
 #include "parser.h"
 
-static void trim_left(char *s)
+static int has_src(struct parser *p)
 {
-    size_t pad = 0 ;
+    return p->cur < p->len;
+}
 
-    while (isspace(s[pad])) pad++;
+static int eol(struct parser *p)
+{
+    return p->src[p->cur] == '\r' || p->src[p->cur] == '\n';
+}
 
-    if (pad > 0) {
-        size_t i;
+static void parse_line(struct parser *p, char *line)
+{
+    int has_line = 0,
+        i = 0;
 
-        for (i = pad; i < strlen(s); ++i) {
-            s[i - pad] = s[i];
+    while (has_line == 0 && has_src(p) == 1) {
+        switch (p->src[p->cur]) {
+        case '\t':
+        case ' ':
+            p->cur++;
+            break;
+
+        case '\r':
+            p->cur += 2;
+            has_line = 1;
+            break;
+
+        case '\n':
+            p->cur++;
+            has_line = 1;
+            break;
+
+        case '/':
+            while (eol(p) == 0 && has_src(p) == 1) p->cur++;
+            break;
+
+        default:
+            assert(i < 128);
+            line[i++] = p->src[p->cur++];
+            break;
         }
-        s[i - pad] = '\0';
     }
 }
 
-static void trim_right(char *s)
+int parse_command(struct parser *p, struct command *cmd)
 {
-    size_t pad;
+    char line[128];
+    size_t i, j;
 
-    if (*s == '\0') return;
+parse_again:
+    memset(line, 0, sizeof(line));
+    parse_line(p, line);
 
-    pad = strlen(s) - 1;
-    while (isspace(s[pad])) pad--;
-    s[pad + 1] = '\0';
-}
-
-void parser_init(struct parser *p, char *filepath)
-{
-    p->line_size = 0;
-    p->line = NULL;
-    p->file = fopen(filepath, "r");
-    assert(p->file != NULL);
-}
-
-int peek_line(struct parser *p)
-{
-    for (;;) {
-        ssize_t read;
-
-        read = getline(&p->line, &p->line_size, p->file);
-
-        if (read == -1) {
-            fclose(p->file);
-            free(p->line);
+    switch (line[0]) {
+    case '\0':
+        if (has_src(p) == 0) {
             return 0;
         }
+        goto parse_again;
 
-        trim_left(p->line);
+    case '(':
+        cmd->kind = COMMAND_L;
+        assert(strlen(line) - 2 < 128);
+        memcpy(cmd->symbols, line + 1, strlen(line) - 2);
+        break;
 
-        if (strstr(p->line, "//") != NULL) {
-            // whole line is comment
-            if (strncmp(p->line, "//", 2) == 0) continue;
+    case '@':
+        cmd->kind = COMMAND_A;
+        assert(strlen(line) - 1 < 128);
+        memcpy(cmd->symbols, line + 1, strlen(line) - 1);
+        break;
 
-            // line has inline comment
-            char line_copy[strlen(p->line)];
-            strcpy(line_copy, p->line);
-            char *line_without_comment = strtok(line_copy, "//");
-            strcpy(p->line, line_without_comment);
+    default:
+        cmd->kind = COMMAND_C;
+
+        i = 0;
+        j = 0;
+        while (line[i] != '\0') {
+            if (line[i] == '=') {
+                assert(j < 4);
+                memcpy(cmd->dest, cmd->comp, j);
+                memset(cmd->comp, 0, sizeof(cmd->comp));
+                i++;
+                j = 0;
+                continue;
+            }
+
+            if (line[i] == ';') {
+                i++;
+                j = 0;
+                while (line[i] != '\0') {
+                    assert(j < 4);
+                    cmd->jump[j++] = line[i++];
+                }
+                break;
+            }
+
+            assert(j < 4);
+            cmd->comp[j++] = line[i++];
         }
 
-        trim_right(p->line);
-
-        if (strlen(p->line) == 0) continue;
-
-        return 1;
+        break;
     }
+
+    return 1;
 }
 
-void parse_instruction(struct parser *p, struct instruction *inst)
+void parser_reset(struct parser *p)
 {
-    // instruction A starts with @
-    if (strncmp(p->line, "@", 1) == 0) {
-        inst->kind = INSTRUCTION_KIND_A;
-        // remove '@' from inst: @R1 -> R1
-        for (size_t i = 1; i <= strlen(p->line); ++i) {
-            inst->label[i - 1] = p->line[i];
-        }
-    // instruction L starts with '(' and ends with ')'
-    } else if (strncmp(p->line, "(", 1) == 0) {
-        inst->kind = INSTRUCTION_KIND_L;
-        // remove '(' and ')' from label: (LABEL_NAME) -> LABEL_NAME
-        size_t i = 1;
-        for (; i < strlen(p->line) - 1; ++i) {
-            inst->label[i - 1] = p->line[i];
-        }
-        inst->label[i - 1] = '\0';
-    } else {
-        inst->kind = INSTRUCTION_KIND_C;
-
-        // if instruction C includes '=', then extract dest
-        if (strchr(p->line, '=') != NULL) {
-            char line_copy[strlen(p->line)];
-            strcpy(line_copy, p->line);
-
-            char *dest = strtok(line_copy, "=");
-            strcpy(inst->dest, dest);
-
-            char *next_tok = strtok(NULL, "=");
-            strcpy(p->line, next_tok);
-        }
-
-        // if instruction C includes ';', then extract jump
-        if (strchr(p->line, ';') != NULL) {
-            char line_copy[strlen(p->line)];
-            strcpy(line_copy, p->line);
-
-            char *comp = strtok(line_copy, ";");
-            strcpy(p->line, comp);
-
-            char *jump = strtok(NULL, ";");
-
-            strcpy(inst->jump, jump);
-        }
-
-        strcpy(inst->comp, p->line);
-    }
+    p->cur = 0;
 }

@@ -1,23 +1,22 @@
-struct parser {
-    FILE *file;
-    char *line;
-    size_t line_size;
+enum command_kind {
+    COMMAND_A,
+    COMMAND_C,
+    COMMAND_L,
 };
 
-enum instruction_kind {
-    INSTRUCTION_KIND_A = 0,
-    INSTRUCTION_KIND_C,
-    INSTRUCTION_KIND_L
-};
-
-struct instruction {
-    enum instruction_kind kind;
+struct command {
+    enum command_kind kind;
     char dest[4];
     char comp[4];
     char jump[4];
-    char label[128];
+    char symbols[128];
 };
 
-void parser_init(struct parser *p, char *filepath);
-int peek_line(struct parser *p);
-void parse_instruction(struct parser *p, struct instruction *inst);
+struct parser {
+    char *src;
+    size_t cur;
+    size_t len;
+};
+
+int parse_command(struct parser *p, struct command *cmd);
+void parser_reset(struct parser *p);
