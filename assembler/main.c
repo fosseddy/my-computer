@@ -8,9 +8,6 @@
 #include "parser.h"
 #include "symtable.h"
 
-struct symtable symtable;
-struct parser parser;
-
 void print_usage(FILE *stream, char *msg)
 {
     if (msg != NULL) {
@@ -59,44 +56,60 @@ char *read_file(char *pathname)
     return src;
 }
 
-void populate_symtable()
+void populate_symtable(struct symtable *st, char *src)
 {
+    struct parser p;
     struct command cmd;
     size_t line_count = 0;
 
+    parser_init(&p, src);
+
     for (;;) {
         memset(&cmd, 0, sizeof(cmd));
-        if (parse_command(&parser, &cmd) == 0) {
+        if (parse_command(&p, &cmd) == 0) {
             break;
         }
 
         if (cmd.kind == COMMAND_L) {
-            symtable_put(&symtable, cmd.symbols, line_count);
+            symtable_put(st, cmd.symbols, line_count);
         } else {
             line_count++;
         }
     }
-
-    parser_reset(&parser);
 }
 
-void compile()
+void compile(char *src, struct symtable *st)
 {
+    struct parser p;
     struct command cmd;
-    //size_t var_addr_start = 16;
+    size_t var_addr_start = 16;
+
+    parser_init(&p, src);
 
     for (;;) {
         memset(&cmd, 0, sizeof(cmd));
-        if (parse_command(&parser, &cmd) == 0) {
+        if (parse_command(&p, &cmd) == 0) {
+            break;
+        }
+
+        switch (cmd.kind) {
+        case COMMAND_A:
+            break;
+
+        case COMMAND_C:
+            break;
+
+        case COMMAND_L:
             break;
         }
     }
-
-    parser_reset(&parser);
 }
 
 int main(int argc, char **argv)
 {
+    struct symtable st;
+    char *src;
+
     --argc;
     ++argv;
 
@@ -105,14 +118,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    parser.src = read_file(*argv);
-    parser.len = strlen(parser.src);
-    parser.cur = 0;
+    src = read_file(*argv);
+    symtable_init(&st);
 
-    symtable_init(&symtable);
-    populate_symtable();
-    compile();
+    populate_symtable(&st, src);
+    compile(src, &st);
 
-    free(parser.src);
+    symtable_free(&st);
+    free(src);
     return 0;
 }

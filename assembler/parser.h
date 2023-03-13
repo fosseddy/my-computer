@@ -19,4 +19,4 @@ struct parser {
 };
 
 int parse_command(struct parser *p, struct command *cmd);
-void parser_reset(struct parser *p);
+void parser_init(struct parser *p, char *src);

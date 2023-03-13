@@ -110,7 +110,9 @@ parse_again:
     return 1;
 }
 
-void parser_reset(struct parser *p)
+void parser_init(struct parser *p, char *src)
 {
+    p->src = src;
+    p->len = strlen(src);
     p->cur = 0;
 }
