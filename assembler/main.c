@@ -7,6 +7,7 @@
 
 #include "parser.h"
 #include "symtable.h"
+#include "translate.h"
 
 void print_usage(FILE *stream, char *msg)
 {
@@ -60,7 +61,7 @@ void populate_symtable(struct symtable *st, char *src)
 {
     struct parser p;
     struct command cmd;
-    size_t line_count = 0;
+    int line_count = 0;
 
     parser_init(&p, src);
 
@@ -78,31 +79,45 @@ void populate_symtable(struct symtable *st, char *src)
     }
 }
 
-void compile(char *src, struct symtable *st)
+void translate(char *src, struct symtable *st)
 {
+    FILE *out;
     struct parser p;
     struct command cmd;
-    size_t var_addr_start = 16;
+    char binary[17];
+
+    out = fopen("out.hack", "w");
+    if (out == NULL) {
+        perror("failed to create output file");
+        exit(1);
+    }
 
     parser_init(&p, src);
 
     for (;;) {
+        memset(&binary, 0, sizeof(binary));
         memset(&cmd, 0, sizeof(cmd));
+
         if (parse_command(&p, &cmd) == 0) {
             break;
         }
 
         switch (cmd.kind) {
         case COMMAND_A:
+            translate_a(&cmd, binary, sizeof(binary), st);
+            fprintf(out, "%s\n", binary);
             break;
 
         case COMMAND_C:
+            translate_c(&cmd, binary);
+            fprintf(out, "%s\n", binary);
             break;
 
-        case COMMAND_L:
-            break;
+        case COMMAND_L: break;
         }
     }
+
+    fclose(out);
 }
 
 int main(int argc, char **argv)
@@ -110,8 +125,8 @@ int main(int argc, char **argv)
     struct symtable st;
     char *src;
 
-    --argc;
-    ++argv;
+    argc--;
+    argv++;
 
     if (argc < 1) {
         print_usage(stderr, "missing file to compile");
@@ -122,7 +137,7 @@ int main(int argc, char **argv)
     symtable_init(&st);
 
     populate_symtable(&st, src);
-    compile(src, &st);
+    translate(src, &st);
 
     symtable_free(&st);
     free(src);

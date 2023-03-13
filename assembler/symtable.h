@@ -1,7 +1,7 @@
 struct symtable {
     size_t size;
     size_t cap;
-    struct slot *slots; // defined in symtable.c
+    struct slot *slots; // symtable.c
 };
 
 void symtable_init(struct symtable *st);
