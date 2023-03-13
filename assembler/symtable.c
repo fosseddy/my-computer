@@ -78,18 +78,5 @@ int symtable_get(struct symtable *st, char *key)
         }
     }
 
-    return 0;
-}
-
-int symtable_has(struct symtable *st, char *key)
-{
-    size_t i;
-
-    for (i = 0; i < st->size; ++i) {
-        if (strcmp(st->slots[i].key, key) == 0) {
-            return 1;
-        }
-    }
-
-    return 0;
+    return -1;
 }

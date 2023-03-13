@@ -103,9 +103,8 @@ static int get_symbol_addr(struct command *cmd, struct symtable *st)
     if (is_number(cmd->symbols) == 1) {
         val = atoi(cmd->symbols);
     } else {
-        if (symtable_has(st, cmd->symbols) == 1) {
-            val = symtable_get(st, cmd->symbols);
-        } else {
+        val = symtable_get(st, cmd->symbols);
+        if (val < 0) {
             val = variable_address;
             variable_address++;
             symtable_put(st, cmd->symbols, val);
