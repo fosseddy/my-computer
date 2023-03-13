@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
+
+#include "parser.h"
+#include "symtable.h"
+
+struct symtable symtable;
+struct parser parser;
 
 void print_usage(FILE *stream, char *msg)
 {
@@ -52,21 +59,44 @@ char *read_file(char *pathname)
     return src;
 }
 
-struct instruction {
-    void *ptr;
-};
-
-int parse_instruction(struct instruction *inst)
+void populate_symtable()
 {
-    (void) inst;
-    return 0;
+    struct command cmd;
+    size_t line_count = 0;
+
+    for (;;) {
+        memset(&cmd, 0, sizeof(cmd));
+        if (parse_command(&parser, &cmd) == 0) {
+            break;
+        }
+
+        if (cmd.kind == COMMAND_L) {
+            symtable_put(&symtable, cmd.symbols, line_count);
+        } else {
+            line_count++;
+        }
+    }
+
+    parser_reset(&parser);
+}
+
+void compile()
+{
+    struct command cmd;
+    //size_t var_addr_start = 16;
+
+    for (;;) {
+        memset(&cmd, 0, sizeof(cmd));
+        if (parse_command(&parser, &cmd) == 0) {
+            break;
+        }
+    }
+
+    parser_reset(&parser);
 }
 
 int main(int argc, char **argv)
 {
-    char *src;
-    struct instruction inst;
-
     --argc;
     ++argv;
 
@@ -75,14 +105,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    src = read_file(*argv);
+    parser.src = read_file(*argv);
+    parser.len = strlen(parser.src);
+    parser.cur = 0;
 
-    for (;;) {
-        if (parse_instruction(&inst) == 0) {
-            break;
-        }
-    }
+    symtable_init(&symtable);
+    populate_symtable();
+    compile();
 
-    free(src);
+    free(parser.src);
     return 0;
 }
