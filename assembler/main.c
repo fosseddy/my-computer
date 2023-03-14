@@ -57,6 +57,22 @@ char *read_file(char *pathname)
     return src;
 }
 
+void create_outpath(char *in, char *out)
+{
+    int i;
+
+    for (i = strlen(in) - 1; i >= 0; --i) {
+        if (in[i] == '.') {
+            break;
+        }
+    }
+
+    memcpy(out, in, i);
+    out[i] = '\0';
+
+    strcat(out, ".hack");
+}
+
 void populate_symtable(struct symtable *st, char *src)
 {
     struct parser p;
@@ -79,14 +95,14 @@ void populate_symtable(struct symtable *st, char *src)
     }
 }
 
-void translate(char *src, struct symtable *st)
+void translate(char *src, struct symtable *st, char *outpath)
 {
     FILE *out;
     struct parser p;
     struct command cmd;
     char binary[17];
 
-    out = fopen("out.hack", "w");
+    out = fopen(outpath, "w");
     if (out == NULL) {
         perror("failed to create output file");
         exit(1);
@@ -123,7 +139,7 @@ void translate(char *src, struct symtable *st)
 int main(int argc, char **argv)
 {
     struct symtable st;
-    char *src;
+    char *src, outpath[256];
 
     argc--;
     argv++;
@@ -134,10 +150,12 @@ int main(int argc, char **argv)
     }
 
     src = read_file(*argv);
-    symtable_init(&st);
+    create_outpath(*argv, outpath);
 
+    symtable_init(&st);
     populate_symtable(&st, src);
-    translate(src, &st);
+
+    translate(src, &st, outpath);
 
     symtable_free(&st);
     free(src);
